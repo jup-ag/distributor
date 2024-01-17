@@ -1,5 +1,3 @@
-use std::mem::transmute;
-
 use anchor_client::solana_client::rpc_filter::{Memcmp, RpcFilterType};
 use merkle_distributor::state::claim_status::ClaimStatus;
 
