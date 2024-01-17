@@ -7,13 +7,12 @@ use crate::*;
 
 pub fn process_close_claim_status(args: &Args) {
     let program = args.get_program_client();
-    let true_bytes = unsafe { transmute::<bool, u8>(true) };
     let claim_status_accounts: Vec<(Pubkey, ClaimStatus)> = program
         .accounts(vec![
             RpcFilterType::DataSize((8 + ClaimStatus::LEN) as u64),
             RpcFilterType::Memcmp(Memcmp::new_raw_bytes(
-                8 + 32 + 8 + 8,
-                true_bytes.to_le_bytes().to_vec(),
+                8 + 32 + 8 + 8 + 8,
+                u8::from(true).to_le_bytes().to_vec(),
             )),
         ])
         .unwrap();
