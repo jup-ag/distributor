@@ -117,6 +117,8 @@ pub enum Commands {
     ViewClaimStatus(ViewClaimStatusArgs),
 
     VerifyKvProof(VerifyKvProofArgs),
+    TotalClaim(TotalClaimAgrs),
+    SetCrawlBackReceiver(CrawlBackReceiverArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -199,8 +201,6 @@ pub struct NewDistributorArgs {
 
 #[derive(Parser, Debug)]
 pub struct ClawbackArgs {
-    #[clap(long, env)]
-    pub clawback_keypair_path: PathBuf,
     #[clap(long, env)]
     pub airdrop_version: u64,
 }
@@ -365,6 +365,12 @@ pub struct ResendSendArgs {
 }
 
 #[derive(Parser, Debug)]
+pub struct TotalClaimAgrs {
+    #[clap(long, env)]
+    pub num_tree: u64,
+}
+
+#[derive(Parser, Debug)]
 pub struct ViewClaimStatusArgs {}
 
 #[derive(Parser, Debug)]
@@ -381,6 +387,14 @@ pub struct VerifyKvProofArgs {
     /// number of entries to verify
     #[clap(long, env)]
     pub num_verify: u64,
+}
+
+#[derive(Parser, Debug)]
+pub struct CrawlBackReceiverArgs {
+    #[clap(long, env)]
+    airdrop_version: u64,
+    #[clap(long, env)]
+    receiver: Pubkey,
 }
 
 fn main() {
@@ -443,6 +457,10 @@ fn main() {
         Commands::Resend(re_send_args) => process_resend(&args, re_send_args),
         Commands::ViewClaimStatus(_view_claim_status_args) => view_claim_status(&args),
         Commands::VerifyKvProof(verify_kv_proof_args) => verify_kv_proof(verify_kv_proof_args),
+        Commands::TotalClaim(total_claim_argrs) => get_total_claim(&args, total_claim_argrs),
+        Commands::SetCrawlBackReceiver(crawl_back_receiver_args) => {
+            set_craw_back_receiver(&args, crawl_back_receiver_args)
+        }
     }
 }
 

@@ -3,15 +3,15 @@ use crate::*;
 pub fn process_clawback(args: &Args, clawback_args: &ClawbackArgs) {
     let payer_keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
-    let clawback_keypair = read_keypair_file(&clawback_args.clawback_keypair_path)
-        .expect("Failed reading keypair file");
-
-    let clawback_ata = get_associated_token_address(&clawback_keypair.pubkey(), &args.mint);
 
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
 
+    let program = args.get_program_client();
+
     let (distributor, _bump) =
         get_merkle_distributor_pda(&args.program_id, &args.mint, clawback_args.airdrop_version);
+
+    let distributor_state: MerkleDistributor = program.account(distributor).unwrap();
 
     let from = get_associated_token_address(&distributor, &args.mint);
     println!("from: {from}");
@@ -21,8 +21,8 @@ pub fn process_clawback(args: &Args, clawback_args: &ClawbackArgs) {
         accounts: merkle_distributor::accounts::Clawback {
             distributor,
             from,
-            to: clawback_ata,
-            claimant: clawback_keypair.pubkey(),
+            to: distributor_state.clawback_receiver,
+            claimant: payer_keypair.pubkey(),
             system_program: solana_program::system_program::ID,
             token_program: token::ID,
         }
@@ -33,7 +33,7 @@ pub fn process_clawback(args: &Args, clawback_args: &ClawbackArgs) {
     let tx = Transaction::new_signed_with_payer(
         &[clawback_ix],
         Some(&payer_keypair.pubkey()),
-        &[&payer_keypair, &clawback_keypair],
+        &[&payer_keypair],
         client.get_latest_blockhash().unwrap(),
     );
 
