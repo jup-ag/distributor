@@ -83,28 +83,34 @@ pub fn handle_new_distributor(
     let curr_ts = Clock::get()?.unix_timestamp;
 
     require!(
-        start_vesting_ts < end_vesting_ts,
-        ErrorCode::StartTimestampAfterEnd
-    );
-    // New distributor parameters must all be set in the future
-    require!(
-        start_vesting_ts > curr_ts && end_vesting_ts > curr_ts && clawback_start_ts > curr_ts,
+        clawback_start_ts > curr_ts,
         ErrorCode::TimestampsNotInFuture
     );
 
-    require!(
-        clawback_start_ts > end_vesting_ts,
-        ErrorCode::ClawbackDuringVesting
-    );
+    // require!(
+    //     start_vesting_ts < end_vesting_ts,
+    //     ErrorCode::StartTimestampAfterEnd
+    // );
 
-    // Ensure clawback_start_ts is at least one day after end_vesting_ts
-    require!(
-        clawback_start_ts
-            >= end_vesting_ts
-                .checked_add(SECONDS_PER_DAY)
-                .ok_or(ErrorCode::ArithmeticError)?,
-        ErrorCode::InsufficientClawbackDelay
-    );
+    // // New distributor parameters must all be set in the future
+    // require!(
+    //     start_vesting_ts > curr_ts && end_vesting_ts > curr_ts && clawback_start_ts > curr_ts,
+    //     ErrorCode::TimestampsNotInFuture
+    // );
+
+    // require!(
+    //     clawback_start_ts > end_vesting_ts,
+    //     ErrorCode::ClawbackDuringVesting
+    // );
+
+    // // Ensure clawback_start_ts is at least one day after end_vesting_ts
+    // require!(
+    //     clawback_start_ts
+    //         >= end_vesting_ts
+    //             .checked_add(SECONDS_PER_DAY)
+    //             .ok_or(ErrorCode::ArithmeticError)?,
+    //     ErrorCode::InsufficientClawbackDelay
+    // );
 
     let distributor = &mut ctx.accounts.distributor;
 
