@@ -19,6 +19,7 @@ pub struct NewDistributor<'info> {
         init,
         seeds = [
             b"MerkleDistributor".as_ref(),
+            base.key().to_bytes().as_ref(),
             mint.key().to_bytes().as_ref(),
             version.to_le_bytes().as_ref()
         ],
@@ -27,6 +28,9 @@ pub struct NewDistributor<'info> {
         payer = admin
     )]
     pub distributor: Account<'info, MerkleDistributor>,
+
+    /// Base key of the distributor.
+    pub base: Signer<'info>,
 
     /// Clawback receiver token account
     #[account(mut, token::mint = mint)]
@@ -125,6 +129,7 @@ pub fn handle_new_distributor(
     distributor.clawed_back = false;
     distributor.enable_slot = enable_slot;
     distributor.closable = closable;
+    distributor.base = ctx.accounts.base.key();
 
     // Note: might get truncated, do not rely on
     msg! {

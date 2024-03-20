@@ -13,7 +13,7 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
         let airdrop_version = set_enable_slot_args.airdrop_version.unwrap();
 
         let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, airdrop_version);
+            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, airdrop_version);
         let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
         if distributor_state.enable_slot == set_enable_slot_args.slot {
             println!("already set slot skip airdrop version {}", airdrop_version);
@@ -71,8 +71,12 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 
-        let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();

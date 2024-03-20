@@ -23,8 +23,12 @@ pub fn process_close_distributor(args: &Args, close_distributor_args: &CloseDist
             }
         }
 
-        let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
         let program = args.get_program_client();
         let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
             .expect("Failed reading keypair file");

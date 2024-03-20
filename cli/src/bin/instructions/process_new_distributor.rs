@@ -7,6 +7,8 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
     // println!("{}", &args.keypair_path);
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
+    let base = read_keypair_file(&new_distributor_args.base_path).expect("Requires a keypair file");
+
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
     let mut paths: Vec<_> = fs::read_dir(&new_distributor_args.merkle_tree_path)
@@ -27,8 +29,12 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                 continue;
             }
         }
-        let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &base.pubkey(),
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         if let Some(account) = client
             .get_account_with_commitment(&distributor_pubkey, CommitmentConfig::confirmed())
@@ -44,6 +50,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                 &merkle_tree,
                 new_distributor_args,
                 keypair.pubkey(),
+                base.pubkey(),
                 &args,
             ).expect("merkle root on-chain does not match provided arguments! Confirm admin and clawback parameters to avoid loss of funds!");
             continue;
@@ -91,6 +98,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
         ixs.push(Instruction {
             program_id: args.program_id,
             accounts: merkle_distributor::accounts::NewDistributor {
+                base: base.pubkey(),
                 clawback_receiver,
                 mint: args.mint,
                 token_vault,
@@ -119,7 +127,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
         let tx = Transaction::new_signed_with_payer(
             &ixs,
             Some(&keypair.pubkey()),
-            &[&keypair],
+            &[&keypair, &base],
             blockhash,
         );
 
@@ -165,6 +173,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                   &merkle_tree,
                   new_distributor_args,
                   keypair.pubkey(),
+                  base.pubkey(),
                   args,
               ).expect("merkle root on-chain does not match provided arguments! Confirm admin and clawback parameters to avoid loss of funds!");
             }

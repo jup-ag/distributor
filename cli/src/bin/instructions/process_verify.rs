@@ -21,8 +21,12 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
             merkle_tree.airdrop_version
         );
 
-        let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         if !verfify_args.skip_verify_amount {
             let token_vault = get_associated_token_address(&distributor_pubkey, &args.mint);

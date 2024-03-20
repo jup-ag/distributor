@@ -9,7 +9,7 @@ pub fn get_total_claim(args: &Args, total_claim_args: &TotalClaimAgrs) {
     let mut total_node_claimed = 0u64;
     for i in 0..=total_claim_args.num_tree {
         let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, i);
+            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, i);
         let distributor: MerkleDistributor = program.account(distributor_pubkey).unwrap();
         total_node_claimed += distributor.num_nodes_claimed;
     }
@@ -83,7 +83,7 @@ pub fn process_close_claim_status(args: &Args) {
                         println!("done close claim status {}", tx.get_signature());
                         close_ixs = vec![];
                     }
-                    Err(e) => {
+                    Err(_e) => {
                         println!("Failed to close claim status account");
                     }
                 }
@@ -107,7 +107,7 @@ pub fn process_close_claim_status(args: &Args) {
             Ok(_) => {
                 println!("done close claim status {}", tx.get_signature());
             }
-            Err(e) => {
+            Err(_e) => {
                 println!("Failed to close claim status account");
             }
         }

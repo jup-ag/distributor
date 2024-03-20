@@ -59,6 +59,7 @@ pub fn handle_clawback(ctx: Context<Clawback>) -> Result<()> {
 
     let seeds = [
         b"MerkleDistributor".as_ref(),
+        &distributor.base.to_bytes(),
         &distributor.mint.to_bytes(),
         &distributor.version.to_le_bytes(),
         &[ctx.accounts.distributor.bump],

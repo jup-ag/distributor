@@ -11,8 +11,12 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
     let merkle_tree = AirdropMerkleTree::new_from_file(&claim_args.merkle_tree_path)
         .expect("failed to load merkle tree from file");
 
-    let (distributor, _bump) =
-        get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+    let (distributor, _bump) = get_merkle_distributor_pda(
+        &args.program_id,
+        &args.base,
+        &args.mint,
+        merkle_tree.airdrop_version,
+    );
 
     // Get user's node in claim
     let node = merkle_tree.get_node(&claimant);

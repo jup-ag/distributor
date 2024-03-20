@@ -39,7 +39,7 @@ pub fn process_set_enable_slot_by_time(
     if set_enable_slot_by_time_args.airdrop_version.is_some() {
         let airdrop_version = set_enable_slot_by_time_args.airdrop_version.unwrap();
         let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, airdrop_version);
+            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, airdrop_version);
 
         let mut ixs = vec![];
         // check priority fee
@@ -82,8 +82,12 @@ pub fn process_set_enable_slot_by_time(
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 
-        let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         let set_slot_ix = Instruction {
             program_id: args.program_id,

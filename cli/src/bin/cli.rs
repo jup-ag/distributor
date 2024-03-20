@@ -2,14 +2,7 @@ extern crate jito_merkle_tree;
 extern crate merkle_distributor;
 
 pub mod instructions;
-use std::{
-    collections::HashSet,
-    fs,
-    ops::Deref,
-    path::{Path, PathBuf},
-    rc::Rc,
-    str::FromStr,
-};
+use std::{fs, path::PathBuf, rc::Rc, str::FromStr};
 
 use anchor_client::{
     solana_sdk::signer::keypair::read_keypair_file, Client as AnchorClient, Cluster, Program,
@@ -52,6 +45,10 @@ pub struct Args {
     /// SPL Mint address
     #[clap(long, env, default_value_t = Pubkey::default())]
     pub mint: Pubkey,
+
+    /// base key for merkle tree
+    #[clap(long, env, default_value_t = Pubkey::default())]
+    pub base: Pubkey,
 
     /// RPC url
     #[clap(long, env, default_value = "http://localhost:8899")]
@@ -207,6 +204,14 @@ pub struct NewDistributorArgs {
 
     #[clap(long, env)]
     pub skip_verify: bool,
+
+    /// Base keypair
+    #[clap(long, env)]
+    pub base_path: String,
+
+    /// Clawback receiver owner
+    #[clap(long, env)]
+    pub clawback_receiver_owner: Pubkey,
 }
 
 #[derive(Parser, Debug)]
@@ -481,12 +486,18 @@ fn check_distributor_onchain_matches(
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
     pubkey: Pubkey,
+    base: Pubkey,
     args: &Args,
 ) -> Result<(), &'static str> {
     if let Ok(distributor) = MerkleDistributor::try_deserialize(&mut account.data.as_slice()) {
         if distributor.root != merkle_tree.merkle_root {
             return Err("root mismatch");
         }
+
+        if distributor.base != base {
+            return Err("base mismatch");
+        }
+
         if distributor.max_total_claim != merkle_tree.max_total_claim {
             return Err("max_total_claim mismatch");
         }
@@ -513,12 +524,13 @@ fn check_distributor_onchain_matches(
         }
 
         // TODO fix code
-        let program = args.get_program_client();
-        let clawback_receiver_token_account: TokenAccount = program
-            .account(distributor.clawback_receiver)
-            .map_err(|_| "clawback_receiver mismatch")?;
+        let clawback_receiver_token_account =
+            spl_associated_token_account::get_associated_token_address(
+                &new_distributor_args.clawback_receiver_owner,
+                &args.mint,
+            );
 
-        if clawback_receiver_token_account.owner != distributor.admin {
+        if clawback_receiver_token_account != distributor.clawback_receiver {
             return Err("clawback_receiver mismatch");
         }
         if distributor.admin != pubkey {
@@ -567,28 +579,44 @@ fn get_test_list() -> Vec<String> {
     list
 }
 
-fn get_or_create_ata<C: Deref<Target = impl Signer> + Clone>(
-    program_client: &anchor_client::Program<C>,
-    token_mint: Pubkey,
-    user: Pubkey,
-) -> Result<Pubkey> {
-    let user_token_account =
-        spl_associated_token_account::get_associated_token_address(&user, &token_mint);
-    let rpc_client = program_client.rpc();
-    if rpc_client.get_account_data(&user_token_account).is_err() {
-        println!("Create ATA for TOKEN {} \n", &token_mint);
+fn get_or_create_ata(args: &Args, user: Pubkey) -> Result<Pubkey> {
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
 
-        let builder = program_client.request().instruction(
-            spl_associated_token_account::instruction::create_associated_token_account(
-                &program_client.payer(),
-                &user,
-                &token_mint,
-                &spl_token::ID,
-            ),
+    let user_token_account =
+        spl_associated_token_account::get_associated_token_address(&user, &args.mint);
+
+    if let Some(_account) = client
+        .get_account_with_commitment(&user_token_account, CommitmentConfig::confirmed())
+        .unwrap()
+        .value
+    {
+        // nothing to do
+    } else {
+        let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
+            .expect("Failed reading keypair file");
+        let blockhash = client.get_latest_blockhash().unwrap();
+        let tx = Transaction::new_signed_with_payer(
+            &vec![
+                spl_associated_token_account::instruction::create_associated_token_account(
+                    &keypair.pubkey(),
+                    &user,
+                    &args.mint,
+                    &spl_token::ID,
+                ),
+            ],
+            Some(&keypair.pubkey()),
+            &[&keypair],
+            blockhash,
         );
 
-        let signature = builder.send()?;
-        println!("{}", signature);
+        match client.send_transaction(&tx) {
+            Ok(_) => {
+                println!("create ATA {} {:?}", user_token_account, tx.get_signature(),);
+            }
+            Err(e) => {
+                println!("Failed to create ATA: {:?}", e);
+            }
+        }
     }
     Ok(user_token_account)
 }

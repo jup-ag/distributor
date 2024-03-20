@@ -15,6 +15,8 @@ pub struct MerkleDistributor {
     pub root: [u8; 32],
     /// [Mint] of the token to be distributed.
     pub mint: Pubkey,
+    /// base key of distributor.
+    pub base: Pubkey,
     /// Token Address of the vault
     pub token_vault: Pubkey,
     /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].

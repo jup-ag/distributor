@@ -10,8 +10,12 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
     let merkle_tree = AirdropMerkleTree::new_from_file(&claim_args.merkle_tree_path)
         .expect("failed to load merkle tree from file");
 
-    let (distributor, bump) =
-        get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+    let (distributor, bump) = get_merkle_distributor_pda(
+        &args.program_id,
+        &args.base,
+        &args.mint,
+        merkle_tree.airdrop_version,
+    );
     println!("distributor pubkey {}", distributor);
 
     let (claim_status_pda, _bump) = get_claim_status_pda(&args.program_id, &claimant, &distributor);

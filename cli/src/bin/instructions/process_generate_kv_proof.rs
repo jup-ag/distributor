@@ -1,7 +1,6 @@
 use std::{collections::HashMap, fs::File, io::Write};
 
 use serde::{Deserialize, Serialize};
-use zip::write::FileOptions;
 
 use crate::*;
 
@@ -29,8 +28,12 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 
-        let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         for node in merkle_tree.tree_nodes.iter() {
             let user_pk = Pubkey::from(node.claimant);
@@ -58,29 +61,29 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
     }
 }
 
-fn write_to_file_zip(
-    generate_kv_proof_args: &GenerateKvProofArgs,
-    file_index: u64,
-    proofs: &HashMap<String, KvProof>,
-) {
-    let path = generate_kv_proof_args
-        .kv_path
-        .as_path()
-        .join(format!("{}.zip", file_index));
+// fn write_to_file_zip(
+//     generate_kv_proof_args: &GenerateKvProofArgs,
+//     file_index: u64,
+//     proofs: &HashMap<String, KvProof>,
+// ) {
+//     let path = generate_kv_proof_args
+//         .kv_path
+//         .as_path()
+//         .join(format!("{}.zip", file_index));
 
-    println!("zip to file {}", file_index);
-    let serialized = serde_json::to_string_pretty(proofs).unwrap();
-    let file: File = File::create(path).unwrap();
-    let mut zip = zip::ZipWriter::new(file);
-    let options =
-        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
-    zip.start_file(format!("{}.json", file_index), options)
-        .unwrap();
-    zip.write_all(serialized.as_bytes()).unwrap();
-    // Apply the changes you've made.
-    // Dropping the `ZipWriter` will have the same effect, but may silently fail
-    zip.finish().unwrap();
-}
+//     println!("zip to file {}", file_index);
+//     let serialized = serde_json::to_string_pretty(proofs).unwrap();
+//     let file: File = File::create(path).unwrap();
+//     let mut zip = zip::ZipWriter::new(file);
+//     let options =
+//         zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+//     zip.start_file(format!("{}.json", file_index), options)
+//         .unwrap();
+//     zip.write_all(serialized.as_bytes()).unwrap();
+//     // Apply the changes you've made.
+//     // Dropping the `ZipWriter` will have the same effect, but may silently fail
+//     zip.finish().unwrap();
+// }
 
 fn write_to_file(
     generate_kv_proof_args: &GenerateKvProofArgs,
