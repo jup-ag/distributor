@@ -1,3 +1,5 @@
+use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+
 use crate::*;
 
 pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
@@ -32,8 +34,15 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
             continue;
         }
 
-        let tx = Transaction::new_signed_with_payer(
-            &[spl_token::instruction::transfer(
+        let mut ixs = vec![];
+        // check priority fee
+        if let Some(priority_fee) = args.priority_fee {
+            ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                priority_fee,
+            ));
+        }
+        ixs.push(
+            spl_token::instruction::transfer(
                 &spl_token::id(),
                 &source_vault,
                 &token_vault,
@@ -41,7 +50,11 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
                 &[],
                 merkle_tree.max_total_claim,
             )
-            .unwrap()],
+            .unwrap(),
+        );
+
+        let tx = Transaction::new_signed_with_payer(
+            &ixs,
             Some(&keypair.pubkey()),
             &[&keypair],
             client.get_latest_blockhash().unwrap(),

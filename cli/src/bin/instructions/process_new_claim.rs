@@ -1,3 +1,5 @@
+use solana_sdk::compute_budget::ComputeBudgetInstruction;
+
 use crate::*;
 
 pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
@@ -23,22 +25,32 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
 
     let mut ixs = vec![];
 
+    // check priority fee
+    if let Some(priority_fee) = args.priority_fee {
+        ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+            priority_fee,
+        ));
+    }
+
     match client.get_account(&claimant_ata) {
         Ok(_) => {}
         Err(e) => {
             // TODO: directly pattern match on error kind
             if e.to_string().contains("AccountNotFound") {
                 println!("PDA does not exist. creating.");
-                let ix =
-                    create_associated_token_account(&claimant, &claimant, &args.mint, &token::ID);
-                ixs.push(ix);
+                ixs.push(create_associated_token_account(
+                    &claimant,
+                    &claimant,
+                    &args.mint,
+                    &token::ID,
+                ));
             } else {
                 panic!("Error fetching PDA: {e}")
             }
         }
     }
 
-    let new_claim_ix = Instruction {
+    ixs.push(Instruction {
         program_id: args.program_id,
         accounts: merkle_distributor::accounts::NewClaim {
             distributor,
@@ -56,9 +68,7 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
             proof: node.proof.expect("proof not found"),
         }
         .data(),
-    };
-
-    ixs.push(new_claim_ix);
+    });
 
     let blockhash = client.get_latest_blockhash().unwrap();
     let tx =

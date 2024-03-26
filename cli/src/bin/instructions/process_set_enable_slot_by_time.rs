@@ -1,4 +1,5 @@
 use anyhow::Ok;
+use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
 use crate::*;
 
@@ -40,7 +41,14 @@ pub fn process_set_enable_slot_by_time(
         let (distributor, _bump) =
             get_merkle_distributor_pda(&args.program_id, &args.mint, airdrop_version);
 
-        let set_slot_ix = Instruction {
+        let mut ixs = vec![];
+        // check priority fee
+        if let Some(priority_fee) = args.priority_fee {
+            ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                priority_fee,
+            ));
+        }
+        ixs.push(Instruction {
             program_id: args.program_id,
             accounts: merkle_distributor::accounts::SetEnableSlot {
                 distributor,
@@ -48,10 +56,10 @@ pub fn process_set_enable_slot_by_time(
             }
             .to_account_metas(None),
             data: merkle_distributor::instruction::SetEnableSlot { enable_slot: slot }.data(),
-        };
+        });
 
         let tx = Transaction::new_signed_with_payer(
-            &[set_slot_ix],
+            &ixs,
             Some(&keypair.pubkey()),
             &[&keypair],
             client.get_latest_blockhash().unwrap(),

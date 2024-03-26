@@ -1,3 +1,4 @@
+use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
 use anchor_lang::system_program;
 
 use crate::*;
@@ -30,7 +31,16 @@ pub fn process_clawback(args: &Args, clawback_args: &ClawbackArgs) {
                 println!("already clawback {}", merkle_tree.airdrop_version);
                 break;
             }
-            let clawback_ix = Instruction {
+
+            let mut ixs = vec![];
+            // check priority fee
+            if let Some(priority_fee) = args.priority_fee {
+                ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                    priority_fee,
+                ));
+            }
+
+            ixs.push(Instruction {
                 program_id: args.program_id,
                 accounts: merkle_distributor::accounts::Clawback {
                     distributor,
@@ -42,10 +52,10 @@ pub fn process_clawback(args: &Args, clawback_args: &ClawbackArgs) {
                 }
                 .to_account_metas(None),
                 data: merkle_distributor::instruction::Clawback {}.data(),
-            };
+            });
 
             let tx = Transaction::new_signed_with_payer(
-                &[clawback_ix],
+                &ixs,
                 Some(&keypair.pubkey()),
                 &[&keypair],
                 client.get_latest_blockhash().unwrap(),

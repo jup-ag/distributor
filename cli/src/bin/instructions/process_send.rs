@@ -30,6 +30,13 @@ fn send_for_batch_address(
     let source_vault = get_associated_token_address(&keypair.pubkey(), &args.mint);
     let mut mass_ixs = vec![ComputeBudgetInstruction::set_compute_unit_limit(1_000_000)];
 
+    // check priority fee
+    if let Some(priority_fee) = args.priority_fee {
+        mass_ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+            priority_fee,
+        ));
+    }
+
     let mut qualified_address = vec![];
     for address in batch_address.iter() {
         match Pubkey::from_str(address) {

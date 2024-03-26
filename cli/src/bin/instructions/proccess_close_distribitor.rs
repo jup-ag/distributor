@@ -1,6 +1,9 @@
+use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+
 use crate::*;
 
 pub fn process_close_distributor(args: &Args, close_distributor_args: &CloseDistributorArgs) {
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
     let mut paths: Vec<_> = fs::read_dir(&close_distributor_args.merkle_tree_path)
         .unwrap()
         .map(|r| r.unwrap())
@@ -31,12 +34,34 @@ pub fn process_close_distributor(args: &Args, close_distributor_args: &CloseDist
             println!("skip version {}", merkle_tree.airdrop_version);
             continue;
         }
+
+        let mut ixs = vec![];
+        // check priority fee
+        if let Some(priority_fee) = args.priority_fee {
+            ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                priority_fee,
+            ));
+        }
+
         let merkle_distributor_state = merkle_distributor_state.unwrap();
 
-        let destination_token_account =
-            get_or_create_ata(&program, args.mint, keypair.pubkey()).unwrap();
+        let destination_token_account = spl_associated_token_account::get_associated_token_address(
+            &keypair.pubkey(),
+            &args.mint,
+        );
 
-        let close_distributor_ix = Instruction {
+        if client.get_account_data(&destination_token_account).is_err() {
+            ixs.push(
+                spl_associated_token_account::instruction::create_associated_token_account(
+                    &keypair.pubkey(),
+                    &keypair.pubkey(),
+                    &args.mint,
+                    &spl_token::ID,
+                ),
+            );
+        }
+
+        ixs.push(Instruction {
             program_id: args.program_id,
             accounts: merkle_distributor::accounts::CloseDistributor {
                 distributor,
@@ -47,11 +72,11 @@ pub fn process_close_distributor(args: &Args, close_distributor_args: &CloseDist
             }
             .to_account_metas(None),
             data: merkle_distributor::instruction::CloseDistributor {}.data(),
-        };
-        let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
+        });
+
         let blockhash = client.get_latest_blockhash().unwrap();
         let tx = Transaction::new_signed_with_payer(
-            &[close_distributor_ix],
+            &ixs,
             Some(&keypair.pubkey()),
             &[&keypair],
             blockhash,

@@ -1,3 +1,5 @@
+use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+
 use crate::*;
 
 pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) {
@@ -12,7 +14,6 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
         .map(|r| r.unwrap())
         .collect();
     paths.sort_by_key(|dir| dir.path());
-    let program = args.get_program_client();
 
     for file in paths {
         let single_tree_path = file.path();
@@ -49,6 +50,14 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
         }
 
         let mut ixs = vec![];
+
+        // check priority fee
+        if let Some(priority_fee) = args.priority_fee {
+            ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                priority_fee,
+            ));
+        }
+
         let token_vault = spl_associated_token_account::get_associated_token_address(
             &distributor_pubkey,
             &args.mint,
@@ -63,7 +72,21 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                 ),
             );
         }
-        let clawback_receiver = get_or_create_ata(&program, args.mint, keypair.pubkey()).unwrap();
+        let clawback_receiver = spl_associated_token_account::get_associated_token_address(
+            &keypair.pubkey(),
+            &args.mint,
+        );
+
+        if client.get_account_data(&clawback_receiver).is_err() {
+            ixs.push(
+                spl_associated_token_account::instruction::create_associated_token_account(
+                    &keypair.pubkey(),
+                    &keypair.pubkey(),
+                    &args.mint,
+                    &spl_token::ID,
+                ),
+            );
+        }
 
         ixs.push(Instruction {
             program_id: args.program_id,

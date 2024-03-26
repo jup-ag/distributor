@@ -64,6 +64,10 @@ pub struct Args {
     /// Payer keypair
     #[clap(long, env)]
     pub keypair_path: Option<String>,
+
+    /// Priority fee
+    #[clap(long, env)]
+    pub priority_fee: Option<u64>,
 }
 
 impl Args {

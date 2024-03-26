@@ -1,5 +1,6 @@
-use crate::*;
+use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
+use crate::*;
 pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
@@ -31,7 +32,14 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
                 );
                 break;
             }
-            let set_admin_ix = Instruction {
+            let mut ixs = vec![];
+            // check priority fee
+            if let Some(priority_fee) = args.priority_fee {
+                ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                    priority_fee,
+                ));
+            }
+            ixs.push(Instruction {
                 program_id: args.program_id,
                 accounts: merkle_distributor::accounts::SetAdmin {
                     distributor,
@@ -40,10 +48,10 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
                 }
                 .to_account_metas(None),
                 data: merkle_distributor::instruction::SetAdmin {}.data(),
-            };
+            });
 
             let tx = Transaction::new_signed_with_payer(
-                &[set_admin_ix],
+                &ixs,
                 Some(&keypair.pubkey()),
                 &[&keypair],
                 client.get_latest_blockhash().unwrap(),

@@ -1,3 +1,5 @@
+use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+
 use crate::*;
 
 pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
@@ -30,9 +32,17 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
         }
     }
 
+    let mut ixs = vec![];
+    // check priority fee
+    if let Some(priority_fee) = args.priority_fee {
+        ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+            priority_fee,
+        ));
+    }
+
     let claimant_ata = get_associated_token_address(&claimant, &args.mint);
 
-    let claim_ix = Instruction {
+    ixs.push(Instruction {
         program_id: args.program_id,
         accounts: merkle_distributor::accounts::ClaimLocked {
             distributor,
@@ -44,15 +54,11 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::ClaimLocked {}.data(),
-    };
+    });
 
     let blockhash = client.get_latest_blockhash().unwrap();
-    let tx = Transaction::new_signed_with_payer(
-        &[claim_ix],
-        Some(&claimant.key()),
-        &[&keypair],
-        blockhash,
-    );
+    let tx =
+        Transaction::new_signed_with_payer(&ixs, Some(&claimant.key()), &[&keypair], blockhash);
 
     let signature = client
         .send_and_confirm_transaction_with_spinner(&tx)
