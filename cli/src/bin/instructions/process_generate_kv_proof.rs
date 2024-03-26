@@ -54,7 +54,10 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
             }
         }
 
-        println!("done {}", merkle_tree.airdrop_version);
+        println!(
+            "done parse merkle tree airdrop version {}",
+            merkle_tree.airdrop_version
+        );
     }
     if proofs.len() > 0 {
         write_to_file(generate_kv_proof_args, file_index, &proofs);
