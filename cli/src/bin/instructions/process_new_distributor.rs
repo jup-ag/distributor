@@ -80,7 +80,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
             );
         }
         let clawback_receiver = spl_associated_token_account::get_associated_token_address(
-            &keypair.pubkey(),
+            &new_distributor_args.clawback_receiver_owner,
             &args.mint,
         );
 
@@ -88,7 +88,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
             ixs.push(
                 spl_associated_token_account::instruction::create_associated_token_account(
                     &keypair.pubkey(),
-                    &keypair.pubkey(),
+                    &new_distributor_args.clawback_receiver_owner,
                     &args.mint,
                     &spl_token::ID,
                 ),
