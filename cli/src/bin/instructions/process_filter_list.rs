@@ -43,7 +43,7 @@ pub fn process_filter_list(filter_list_args: &FilterListArgs) {
 
 
 /// filter from pubkey only
-pub fn process_filter_list_fixed(filter_list_args: &FilterListArgs) {
+pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
     let community_list = CsvEntry::new_from_file(&filter_list_args.csv_path).unwrap();
     // let test_list: Vec<String> = get_pre_list();
     let mut full_list = vec![];
@@ -55,15 +55,6 @@ pub fn process_filter_list_fixed(filter_list_args: &FilterListArgs) {
         }
         full_list.push((addr.unwrap(), node.amount));
     }
-
-    // for node in test_list.iter() {
-    //     let addr = Pubkey::from_str(&node);
-    //     if addr.is_err() {
-    //         println!("{} is not pubkey", node);
-    //         continue;
-    //     }
-    //     full_list.push((addr.unwrap(), filter_list_args.amount));
-    // }
 
     // remove duplicate
     println!("num node {} ", full_list.len());

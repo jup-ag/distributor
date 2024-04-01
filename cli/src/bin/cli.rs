@@ -109,7 +109,7 @@ pub enum Commands {
     FundAll(FundAllArgs),
     Verify(VerifyArgs),
     FilterList(FilterListArgs),
-    FilterListFixed(FilterListArgs),
+    FilterListFixed(FilterListFixedArgs),
     FilterAndMergeList(FilterAndMergeListArgs),
     SlotByTime(SlotByTimeArgsArgs),
     /// generate kv proof
@@ -328,6 +328,15 @@ pub struct FilterListArgs {
     pub csv_path: PathBuf,
     #[clap(long, env)]
     pub amount: u64,
+    #[clap(long, env)]
+    pub destination_path: String,
+}
+
+#[derive(Parser, Debug)]
+pub struct FilterListFixedArgs {
+    /// CSV path
+    #[clap(long, env)]
+    pub csv_path: PathBuf,
     #[clap(long, env)]
     pub destination_path: String,
 }
