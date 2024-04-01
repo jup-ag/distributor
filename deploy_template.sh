@@ -33,6 +33,12 @@ target/debug/cli --mint $token_mint --priority-fee $priority_fee --keypair-path 
 echo "fund distributor"
 target/debug/cli --mint $token_mint --priority-fee $priority_fee --base $base_key --keypair-path $keypair_path --rpc-url $rpc fund-all --merkle-tree-path $merkle_tree_path
 
-# adjust enable slot
+# verify
 echo "verify"
 target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc verify --merkle-tree-path $merkle_tree_path --clawback-start-ts $clawback_start_ts --enable-slot  $enable_slot --admin $admin --clawback-receiver-owner $clawback_receiver_owner --closable
+
+
+# adjust enable slot
+# echo "adjust enable slot"
+# adjust_slot="[Adjust slot]"
+# target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc set-enable-slot --merkle-tree-path $merkle_tree_path --slot $adjust_slot
