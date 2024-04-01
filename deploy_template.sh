@@ -41,4 +41,4 @@ target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc verify --mer
 # adjust enable slot
 # echo "adjust enable slot"
 # adjust_slot="[Adjust slot]"
-# target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc set-enable-slot --merkle-tree-path $merkle_tree_path --slot $adjust_slot
+# target/debug/cli --mint $token_mint --base $base_key --priority-fee $priority_fee --keypair-path $keypair_path --rpc-url $rpc set-enable-slot --merkle-tree-path $merkle_tree_path --slot $adjust_slot
