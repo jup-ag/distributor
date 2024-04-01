@@ -47,6 +47,7 @@ pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
     let community_list = CsvEntry::new_from_file(&filter_list_args.csv_path).unwrap();
     // let test_list: Vec<String> = get_pre_list();
     let mut full_list = vec![];
+    let mut total_amount = 0u64;
     for node in community_list.iter() {
         let addr = Pubkey::from_str(&node.pubkey);
         if addr.is_err() {
@@ -54,13 +55,16 @@ pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
             continue;
         }
         full_list.push((addr.unwrap(), node.amount));
+        total_amount = total_amount.checked_add(node.amount).unwrap();
     }
 
     // remove duplicate
-    println!("num node {} ", full_list.len());
+    println!("num node before sort {} ", full_list.len());
     full_list.sort_unstable();
     full_list.dedup_by(|a, b| a.0 == b.0);
-    println!("num node {} ", full_list.len());
+    println!("num node after sort {} ", full_list.len());
+
+    println!("total amount {}", total_amount);
 
     let mut wtr = Writer::from_path(&filter_list_args.destination_path).unwrap();
     wtr.write_record(&["pubkey", "amount"]).unwrap();
