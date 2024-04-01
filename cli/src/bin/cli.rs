@@ -109,6 +109,7 @@ pub enum Commands {
     FundAll(FundAllArgs),
     Verify(VerifyArgs),
     FilterList(FilterListArgs),
+    FilterListFixed(FilterListArgs),
     FilterAndMergeList(FilterAndMergeListArgs),
     SlotByTime(SlotByTimeArgsArgs),
     /// generate kv proof
@@ -456,6 +457,9 @@ fn main() {
         }
         Commands::FilterList(filter_list_args) => {
             process_filter_list(filter_list_args);
+        }
+        Commands::FilterListFixed(filter_list_args) => {
+            process_filter_list_fixed(filter_list_args);
         }
         Commands::SlotByTime(slot_by_time_args) => {
             process_get_slot(&args, slot_by_time_args);
