@@ -18,8 +18,7 @@ Before are follow toolset to build sharding merkle trees
 Build:
 
 ```
-cd cli
-cargo build
+cargo build -p jup-scripts
 ```
 
 Refer for merkle tree deployment in `deploy_template.sh`
