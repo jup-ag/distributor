@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn process_create_test_list(args: &Args, create_test_list_args: &CreateTestListArgs) {
+pub fn process_create_test_list(_args: &Args, create_test_list_args: &CreateTestListArgs) {
     let pre_list = get_pre_list();
     let mut wtr = Writer::from_path(&create_test_list_args.csv_path).unwrap();
     wtr.write_record(&["pubkey", "amount"]).unwrap();

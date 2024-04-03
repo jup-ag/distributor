@@ -2,14 +2,7 @@ extern crate jito_merkle_tree;
 extern crate merkle_distributor;
 
 pub mod instructions;
-use std::{
-    collections::HashSet,
-    fs,
-    ops::Deref,
-    path::{Path, PathBuf},
-    rc::Rc,
-    str::FromStr,
-};
+use std::{fs, path::PathBuf, rc::Rc, str::FromStr};
 
 use anchor_client::{
     solana_sdk::signer::keypair::read_keypair_file, Client as AnchorClient, Cluster, Program,
@@ -52,6 +45,10 @@ pub struct Args {
     /// SPL Mint address
     #[clap(long, env, default_value_t = Pubkey::default())]
     pub mint: Pubkey,
+
+    /// base key for merkle tree
+    #[clap(long, env, default_value_t = Pubkey::default())]
+    pub base: Pubkey,
 
     /// RPC url
     #[clap(long, env, default_value = "http://localhost:8899")]
@@ -112,6 +109,7 @@ pub enum Commands {
     FundAll(FundAllArgs),
     Verify(VerifyArgs),
     FilterList(FilterListArgs),
+    FilterListFixed(FilterListFixedArgs),
     FilterAndMergeList(FilterAndMergeListArgs),
     SlotByTime(SlotByTimeArgsArgs),
     /// generate kv proof
@@ -207,6 +205,14 @@ pub struct NewDistributorArgs {
 
     #[clap(long, env)]
     pub skip_verify: bool,
+
+    /// Base keypair
+    #[clap(long, env)]
+    pub base_path: String,
+
+    /// Clawback receiver owner
+    #[clap(long, env)]
+    pub clawback_receiver_owner: Pubkey,
 }
 
 #[derive(Parser, Debug)]
@@ -322,6 +328,15 @@ pub struct FilterListArgs {
     pub csv_path: PathBuf,
     #[clap(long, env)]
     pub amount: u64,
+    #[clap(long, env)]
+    pub destination_path: String,
+}
+
+#[derive(Parser, Debug)]
+pub struct FilterListFixedArgs {
+    /// CSV path
+    #[clap(long, env)]
+    pub csv_path: PathBuf,
     #[clap(long, env)]
     pub destination_path: String,
 }
@@ -452,6 +467,9 @@ fn main() {
         Commands::FilterList(filter_list_args) => {
             process_filter_list(filter_list_args);
         }
+        Commands::FilterListFixed(filter_list_args) => {
+            process_filter_list_fixed(filter_list_args);
+        }
         Commands::SlotByTime(slot_by_time_args) => {
             process_get_slot(&args, slot_by_time_args);
         }
@@ -481,12 +499,18 @@ fn check_distributor_onchain_matches(
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
     pubkey: Pubkey,
+    base: Pubkey,
     args: &Args,
 ) -> Result<(), &'static str> {
     if let Ok(distributor) = MerkleDistributor::try_deserialize(&mut account.data.as_slice()) {
         if distributor.root != merkle_tree.merkle_root {
             return Err("root mismatch");
         }
+
+        if distributor.base != base {
+            return Err("base mismatch");
+        }
+
         if distributor.max_total_claim != merkle_tree.max_total_claim {
             return Err("max_total_claim mismatch");
         }
@@ -513,12 +537,13 @@ fn check_distributor_onchain_matches(
         }
 
         // TODO fix code
-        let program = args.get_program_client();
-        let clawback_receiver_token_account: TokenAccount = program
-            .account(distributor.clawback_receiver)
-            .map_err(|_| "clawback_receiver mismatch")?;
+        let clawback_receiver_token_account =
+            spl_associated_token_account::get_associated_token_address(
+                &new_distributor_args.clawback_receiver_owner,
+                &args.mint,
+            );
 
-        if clawback_receiver_token_account.owner != distributor.admin {
+        if clawback_receiver_token_account != distributor.clawback_receiver {
             return Err("clawback_receiver mismatch");
         }
         if distributor.admin != pubkey {
@@ -565,30 +590,4 @@ fn get_test_list() -> Vec<String> {
     ];
     let list: Vec<String> = list.iter().map(|x| x.to_string()).collect();
     list
-}
-
-fn get_or_create_ata<C: Deref<Target = impl Signer> + Clone>(
-    program_client: &anchor_client::Program<C>,
-    token_mint: Pubkey,
-    user: Pubkey,
-) -> Result<Pubkey> {
-    let user_token_account =
-        spl_associated_token_account::get_associated_token_address(&user, &token_mint);
-    let rpc_client = program_client.rpc();
-    if rpc_client.get_account_data(&user_token_account).is_err() {
-        println!("Create ATA for TOKEN {} \n", &token_mint);
-
-        let builder = program_client.request().instruction(
-            spl_associated_token_account::instruction::create_associated_token_account(
-                &program_client.payer(),
-                &user,
-                &token_mint,
-                &spl_token::ID,
-            ),
-        );
-
-        let signature = builder.send()?;
-        println!("{}", signature);
-    }
-    Ok(user_token_account)
 }

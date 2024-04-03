@@ -10,7 +10,6 @@ use clap::Parser;
 use jito_merkle_tree::{airdrop_merkle_tree::AirdropMerkleTree, utils::get_merkle_distributor_pda};
 use router::RouterState;
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use tracing::{info, instrument};
 
 use crate::{
@@ -29,6 +28,10 @@ pub struct Args {
     /// Path of merkle tree
     #[clap(long, env)]
     merkle_tree_path: PathBuf,
+
+    /// Base key
+    #[clap(long, env)]
+    base: Pubkey,
 
     /// Mint address of token in question
     #[clap(long, env)]
@@ -65,8 +68,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let single_tree_path = file.path();
         let single_tree = AirdropMerkleTree::new_from_file(&single_tree_path)?;
 
-        let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, single_tree.airdrop_version);
+        let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            single_tree.airdrop_version,
+        );
 
         max_total_claim = max_total_claim
             .checked_add(single_tree.max_total_claim)

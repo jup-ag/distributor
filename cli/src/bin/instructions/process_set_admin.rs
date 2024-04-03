@@ -20,8 +20,12 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 
-        let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();

@@ -38,6 +38,7 @@ pub fn handle_close_distributor(ctx: Context<CloseDistributor>) -> Result<()> {
     let distributor = &ctx.accounts.distributor;
     let seeds = [
         b"MerkleDistributor".as_ref(),
+        &distributor.base.to_bytes(),
         &distributor.mint.to_bytes(),
         &distributor.version.to_le_bytes(),
         &[ctx.accounts.distributor.bump],

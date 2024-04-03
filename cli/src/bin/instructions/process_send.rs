@@ -100,7 +100,7 @@ pub fn process_mass_send(args: &Args, mass_send_args: &MassSendArgs) {
     let mut wrap_batch_addresses = vec![];
 
     while index < addresses.len() {
-        if let Some(address) = sent_addresses.get(&addresses[index]) {
+        if let Some(_address) = sent_addresses.get(&addresses[index]) {
             // this addresses has been sent, skip
             index += 1;
             continue;

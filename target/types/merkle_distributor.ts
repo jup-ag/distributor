@@ -42,6 +42,11 @@ export type MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
                 "account": "Mint",
                 "path": "mint"
               },
@@ -52,6 +57,14 @@ export type MerkleDistributor = {
               }
             ]
           }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
         },
         {
           "name": "clawbackReceiver",
@@ -653,6 +666,13 @@ export type MerkleDistributor = {
             "name": "mint",
             "docs": [
               "[Mint] of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "base key of distributor."
             ],
             "type": "publicKey"
           },
@@ -972,6 +992,11 @@ export const IDL: MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
                 "account": "Mint",
                 "path": "mint"
               },
@@ -982,6 +1007,14 @@ export const IDL: MerkleDistributor = {
               }
             ]
           }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
         },
         {
           "name": "clawbackReceiver",
@@ -1583,6 +1616,13 @@ export const IDL: MerkleDistributor = {
             "name": "mint",
             "docs": [
               "[Mint] of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "base key of distributor."
             ],
             "type": "publicKey"
           },

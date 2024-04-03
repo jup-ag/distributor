@@ -15,13 +15,19 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
 
     let source_vault = get_associated_token_address(&keypair.pubkey(), &args.mint);
 
+    println!("source vault {}", source_vault);
+
     for file in paths {
         let single_tree_path = file.path();
 
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
-        let (distributor_pubkey, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.mint, merkle_tree.airdrop_version);
+        let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
+            &args.program_id,
+            &args.base,
+            &args.mint,
+            merkle_tree.airdrop_version,
+        );
 
         let token_vault = get_associated_token_address(&distributor_pubkey, &args.mint);
 
@@ -60,12 +66,28 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
             client.get_latest_blockhash().unwrap(),
         );
 
-        let signature = client.send_transaction(&tx).unwrap();
+        // let signature = client.send_transaction(&tx).unwrap();
 
-        println!(
-            "Successfully transfer {} to merkle tree with airdrop version {}! signature: {signature:#?}",
-            merkle_tree.max_total_claim,
-            merkle_tree.airdrop_version
-        );
+        match client.send_and_confirm_transaction_with_spinner(&tx) {
+            Ok(_) => {
+                println!(
+                    "done fund distributor version {} {:?}",
+                    merkle_tree.airdrop_version,
+                    tx.get_signature(),
+                );
+            }
+            Err(e) => {
+                println!(
+                    "Failed to fund distributor version {}: {:?}",
+                    merkle_tree.airdrop_version, e
+                );
+            }
+        }
+
+        // println!(
+        //     "Successfully transfer {} to merkle tree with airdrop version {}! signature: {signature:#?}",
+        //     merkle_tree.max_total_claim,
+        //     merkle_tree.airdrop_version
+        // );
     }
 }
