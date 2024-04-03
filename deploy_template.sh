@@ -23,13 +23,13 @@ admin=$(solana-keygen pubkey $keypair_path)
 echo "create merkle tree proof"
 target/debug/cli create-merkle-tree --csv-path $csv_path --merkle-tree-path $merkle_tree_path --max-nodes-per-tree $max_nodes_per_tree --amount 0 --decimals $token_decimals
 
-echo "generate kv proof"
-target/debug/cli --mint $token_mint generate-kv-proof --merkle-tree-path $merkle_tree_path --kv-path $kv_path --max-entries-per-file 100000
+# echo "generate kv proof"
+# target/debug/cli --mint $token_mint --base $base_key generate-kv-proof --merkle-tree-path $merkle_tree_path --kv-path $kv_path --max-entries-per-file 100000
 
 echo "deploy distributor"
 target/debug/cli --mint $token_mint --priority-fee $priority_fee --keypair-path $keypair_path --rpc-url $rpc new-distributor --start-vesting-ts $start_vesting_ts --end-vesting-ts $end_vesting_ts --merkle-tree-path $merkle_tree_path --base-path $base_path --clawback-start-ts $clawback_start_ts --enable-slot $enable_slot --clawback-receiver-owner $clawback_receiver_owner --closable
 
-# echo "transfer admin to multisig"
+
 echo "fund distributor"
 target/debug/cli --mint $token_mint --priority-fee $priority_fee --base $base_key --keypair-path $keypair_path --rpc-url $rpc fund-all --merkle-tree-path $merkle_tree_path
 
@@ -37,6 +37,8 @@ target/debug/cli --mint $token_mint --priority-fee $priority_fee --base $base_ke
 echo "verify"
 target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc verify --merkle-tree-path $merkle_tree_path --clawback-start-ts $clawback_start_ts --enable-slot  $enable_slot --admin $admin --clawback-receiver-owner $clawback_receiver_owner --closable
 
+
+# transfer admin to multisig"
 
 # adjust enable slot
 # echo "adjust enable slot"
