@@ -1,22 +1,20 @@
 csv_path="[path to csv]"
 merkle_tree_path="[path to folder that stores merkle tree proof]"
-kv_path="[path to kv proofs]"
-max_nodes_per_tree=12000 # default value, can ignore the field
 token_decimals="[Token decimals]"
 token_mint="[Token mint address]"
 keypair_path="[Path to keypair]"
 rpc="http://127.0.0.1:8899"
 clawback_start_ts="[Clawback date, should be in future]"
-# we dont care for end_vesting_ts and start_vesting ts
 enable_slot="[Enable slot]"
 base_path="[Path to base key]"
 clawback_receiver_owner="[Clawback receiver owner]"
-priority_fee=3000000 # priority fee, can use other number
-
 
 ## caculated variable
+# kv_path="[path to kv proofs]"
+priority_fee=1000000 # priority fee, can use other number
+max_nodes_per_tree=12000 # default value, can ignore the field
 base_key=$(solana-keygen pubkey $base_path)
-end_vesting_ts=$((clawback_start_ts - 86400))
+end_vesting_ts=$((clawback_start_ts - 86400)) # we dont care for end_vesting_ts and start_vesting ts
 start_vesting_ts=$((end_vesting_ts - 1))
 admin=$(solana-keygen pubkey $keypair_path)
 
