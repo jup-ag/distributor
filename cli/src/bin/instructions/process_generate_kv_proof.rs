@@ -35,6 +35,10 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
             merkle_tree.airdrop_version,
         );
 
+        if merkle_tree.airdrop_version == 0 {
+            println!("reference merkle tree {}", distributor_pubkey);
+        }
+
         for node in merkle_tree.tree_nodes.iter() {
             let user_pk = Pubkey::from(node.claimant);
             proofs.insert(
@@ -93,6 +97,8 @@ fn write_to_file(
     file_index: u64,
     proofs: &HashMap<String, KvProof>,
 ) {
+    // create kv folder if not existed
+    fs::create_dir_all(generate_kv_proof_args.kv_path.clone()).unwrap();
     let path = generate_kv_proof_args
         .kv_path
         .as_path()

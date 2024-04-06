@@ -1,12 +1,34 @@
+use std::{thread, time::Duration};
+
 use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+use anyhow::Error;
 
 use crate::*;
-
 pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
+    for i in (1..5).rev() {
+        match fund_all(args, fund_all_args) {
+            Ok(_) => {
+                println!("Done fund all distributors");
+                return;
+            }
+            Err(_) => {
+                println!(
+                    "Failed to fund distributors, retrying, {} time remaining",
+                    i
+                );
+                thread::sleep(Duration::from_secs(5));
+                if i == 1 {
+                    fund_all(args, fund_all_args).expect("Failed to fund distributors");
+                }
+            }
+        }
+    }
+}
+
+fn fund_all(args: &Args, fund_all_args: &FundAllArgs) -> Result<()> {
     let program = args.get_program_client();
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
-    let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
-        .expect("Failed reading keypair file");
+    let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
     let mut paths: Vec<_> = fs::read_dir(&fund_all_args.merkle_tree_path)
         .unwrap()
         .map(|r| r.unwrap())
@@ -15,13 +37,13 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
 
     let source_vault = get_associated_token_address(&keypair.pubkey(), &args.mint);
 
-    println!("source vault {}", source_vault);
+    // println!("source vault {}", source_vault);
 
+    let mut is_error = false;
     for file in paths {
         let single_tree_path = file.path();
 
-        let merkle_tree =
-            AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
+        let merkle_tree = AirdropMerkleTree::new_from_file(&single_tree_path).unwrap();
         let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
             &args.program_id,
             &args.base,
@@ -66,8 +88,6 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
             client.get_latest_blockhash().unwrap(),
         );
 
-        // let signature = client.send_transaction(&tx).unwrap();
-
         match client.send_and_confirm_transaction_with_spinner(&tx) {
             Ok(_) => {
                 println!(
@@ -81,13 +101,14 @@ pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
                     "Failed to fund distributor version {}: {:?}",
                     merkle_tree.airdrop_version, e
                 );
+                is_error = true;
             }
         }
-
-        // println!(
-        //     "Successfully transfer {} to merkle tree with airdrop version {}! signature: {signature:#?}",
-        //     merkle_tree.max_total_claim,
-        //     merkle_tree.airdrop_version
-        // );
     }
+    if is_error {
+        return Err(Error::msg(
+            "There are some error when fund merkle tree, retrying",
+        ));
+    }
+    Ok(())
 }

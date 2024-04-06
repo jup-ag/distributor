@@ -1,27 +1,49 @@
+use std::{thread, time::Duration};
+
 use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
+use anyhow::{Error, Result};
 
 use crate::*;
 
 pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) {
-    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
-    // println!("{}", &args.keypair_path);
-    let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
-        .expect("Failed reading keypair file");
-    let base = read_keypair_file(&new_distributor_args.base_path).expect("Requires a keypair file");
-
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
+    for i in (1..5).rev() {
+        match create_new_distributor(args, new_distributor_args) {
+            Ok(_) => {
+                println!("Done create all distributors");
+                return;
+            }
+            Err(_) => {
+                println!(
+                    "Failed to create distributors, retrying, {} time remaining",
+                    i
+                );
+                thread::sleep(Duration::from_secs(5));
+                if i == 1 {
+                    create_new_distributor(args, new_distributor_args)
+                        .expect("Failed to create distributors");
+                }
+            }
+        }
+    }
+}
+
+fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) -> Result<()> {
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
+    let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
+    let base = read_keypair_file(&new_distributor_args.base_path).unwrap();
     let mut paths: Vec<_> = fs::read_dir(&new_distributor_args.merkle_tree_path)
         .unwrap()
         .map(|r| r.unwrap())
         .collect();
     paths.sort_by_key(|dir| dir.path());
 
+    let mut is_error = false;
     for file in paths {
         let single_tree_path = file.path();
 
-        let merkle_tree =
-            AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
+        let merkle_tree = AirdropMerkleTree::new_from_file(&single_tree_path).unwrap();
 
         if new_distributor_args.airdrop_version.is_some() {
             let airdrop_version = new_distributor_args.airdrop_version.unwrap();
@@ -145,6 +167,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                     );
                 }
                 Err(e) => {
+                    is_error = true;
                     println!("Failed to create MerkleDistributor: {:?}", e);
                 }
             }
@@ -158,6 +181,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                     );
                 }
                 Err(e) => {
+                    is_error = true;
                     println!("Failed to create MerkleDistributor: {:?}", e);
                 }
             }
@@ -186,4 +210,10 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
             }
         }
     }
+    if is_error {
+        return Err(Error::msg(
+            "There are some error when create merkle tree, retrying",
+        ));
+    }
+    Ok(())
 }

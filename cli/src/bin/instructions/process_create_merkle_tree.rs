@@ -4,7 +4,8 @@ use crate::*;
 
 pub fn process_create_merkle_tree(merkle_tree_args: &CreateMerkleTreeArgs) {
     let mut csv_entries = CsvEntry::new_from_file(&merkle_tree_args.csv_path).unwrap();
-
+    // create merkle tree folder if not existed
+    fs::create_dir_all(merkle_tree_args.merkle_tree_path.clone()).unwrap();
     // exclude test address if have
 
     if merkle_tree_args.should_include_test_list {

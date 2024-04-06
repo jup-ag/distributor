@@ -584,9 +584,9 @@ fn get_pre_list() -> Vec<String> {
 
 fn get_test_list() -> Vec<String> {
     let list = vec![
-        "4zvTjdpyr3SAgLeSpCnq4KaHvX2j5SbkwxYydzbfqhRQ",
-        "GMtwcuktJfrRcnyGktWW4Vab8cfjPcBy3xbuZgRegw6E",
-        "6HQeT87Qgh8TkZPJVcbkZh8bQ3gW2st7ZJin8xEkvdWh",
+        "62ucxc2gd5TBCwzToEEWVV4M5drVK7Fi7aYozniqWtac",
+        "HcrGezZ4vsveZ9vRX1vQU3WRiEzx8T4XcBBv9Hs9Smmd",
+        "DHLXnJdACTY83yKwnUkeoDjqi4QBbsYGa1v8tJL76ViX",
     ];
     let list: Vec<String> = list.iter().map(|x| x.to_string()).collect();
     list
