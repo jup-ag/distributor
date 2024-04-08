@@ -35,9 +35,10 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
             merkle_tree.airdrop_version,
         );
 
-        if merkle_tree.airdrop_version == 0 {
-            println!("reference merkle tree {}", distributor_pubkey);
-        }
+        println!(
+            "distributor version {}: {}",
+            merkle_tree.airdrop_version, distributor_pubkey
+        );
 
         for node in merkle_tree.tree_nodes.iter() {
             let user_pk = Pubkey::from(node.claimant);
