@@ -123,7 +123,7 @@ pub enum Commands {
 
     SetClawbackReceiver(ClawbackReceiverArgs),
 
-    ViewDistributor(ViewDistributorArgs),
+    ViewDistributors(ViewDistributorsArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -426,9 +426,11 @@ pub struct ClawbackReceiverArgs {
 }
 
 #[derive(Parser, Debug)]
-pub struct ViewDistributorArgs {
+pub struct ViewDistributorsArgs {
     #[clap(long, env)]
-    pub airdrop_version: u64,
+    pub from_version: u64,
+    #[clap(long, env)]
+    pub to_version: u64,
 }
 
 fn main() {
@@ -495,8 +497,8 @@ fn main() {
         Commands::ViewClaimStatus(_view_claim_status_args) => view_claim_status(&args),
         Commands::VerifyKvProof(verify_kv_proof_args) => verify_kv_proof(verify_kv_proof_args),
         Commands::TotalClaim(total_claim_argrs) => get_total_claim(&args, total_claim_argrs),
-        Commands::ViewDistributor(view_distributor_args) => {
-            view_distributor(&args, view_distributor_args)
+        Commands::ViewDistributors(view_distributors_args) => {
+            view_distributors(&args, view_distributors_args)
         }
         Commands::SetClawbackReceiver(set_clawback_receiver_argrs) => {
             process_set_clawback_receiver(&args, set_clawback_receiver_argrs)
