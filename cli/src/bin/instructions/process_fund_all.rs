@@ -5,7 +5,7 @@ use anyhow::Error;
 
 use crate::*;
 pub fn process_fund_all(args: &Args, fund_all_args: &FundAllArgs) {
-    for i in (1..5).rev() {
+    for i in (1..10).rev() {
         match fund_all(args, fund_all_args) {
             Ok(_) => {
                 println!("Done fund all distributors");
@@ -53,7 +53,7 @@ fn fund_all(args: &Args, fund_all_args: &FundAllArgs) -> Result<()> {
 
         let token_vault = get_associated_token_address(&distributor_pubkey, &args.mint);
 
-        let token_vault_state: TokenAccount = program.account(token_vault).unwrap();
+        let token_vault_state: TokenAccount = program.account(token_vault)?;
         if token_vault_state.amount >= merkle_tree.max_total_claim {
             println!(
                 "already fund airdrop version {}!",
@@ -96,11 +96,11 @@ fn fund_all(args: &Args, fund_all_args: &FundAllArgs) -> Result<()> {
                     tx.get_signature(),
                 );
             }
-            Err(e) => {
-                println!(
-                    "Failed to fund distributor version {}: {:?}",
-                    merkle_tree.airdrop_version, e
-                );
+            Err(_e) => {
+                // println!(
+                //     "Failed to fund distributor version {}: {:?}",
+                //     merkle_tree.airdrop_version, e
+                // );
                 is_error = true;
             }
         }

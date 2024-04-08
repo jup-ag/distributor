@@ -8,7 +8,7 @@ use crate::*;
 pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) {
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
-    for i in (1..5).rev() {
+    for i in (1..10).rev() {
         match create_new_distributor(args, new_distributor_args) {
             Ok(_) => {
                 println!("Done create all distributors");
@@ -59,8 +59,7 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
         );
 
         if let Some(account) = client
-            .get_account_with_commitment(&distributor_pubkey, CommitmentConfig::confirmed())
-            .unwrap()
+            .get_account_with_commitment(&distributor_pubkey, CommitmentConfig::confirmed())?
             .value
         {
             println!(
@@ -180,16 +179,15 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
                         tx.get_signature(),
                     );
                 }
-                Err(e) => {
+                Err(_e) => {
                     is_error = true;
-                    println!("Failed to create MerkleDistributor: {:?}", e);
+                    // println!("Failed to create MerkleDistributor: {:?}", e);
                 }
             }
 
             // double check someone didn't frontrun this transaction with a malicious merkle root
             if let Some(account) = client
-                .get_account_with_commitment(&distributor_pubkey, CommitmentConfig::processed())
-                .unwrap()
+                .get_account_with_commitment(&distributor_pubkey, CommitmentConfig::processed())?
                 .value
             {
                 check_distributor_onchain_matches(

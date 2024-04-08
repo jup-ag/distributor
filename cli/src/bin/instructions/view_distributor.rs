@@ -16,7 +16,7 @@ pub fn view_distributors(args: &Args, view_distributor_args: &ViewDistributorsAr
         {
             let distributor =
                 MerkleDistributor::try_deserialize(&mut account.data.as_slice()).unwrap();
-            println!("version {} {:?}", i, distributor);
+            println!("pk {} version {} {:?}", distributor_pubkey, i, distributor);
         } else {
             println!("merkle distributor {} doesn't exist", i);
         }
