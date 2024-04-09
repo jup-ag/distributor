@@ -88,6 +88,8 @@ impl Args {
 pub enum Commands {
     /// Claim unlocked tokens
     Claim(ClaimArgs),
+    /// Claim by using jup API
+    ClaimFromApi(ClaimFromApiArgs),
     /// Create a new instance of a merkle distributor
     NewDistributor(NewDistributorArgs),
     CloseDistributor(CloseDistributorArgs),
@@ -143,6 +145,15 @@ pub struct ClaimArgs {
     /// Merkle distributor path
     #[clap(long, env)]
     pub merkle_tree_path: PathBuf,
+}
+
+#[derive(Parser, Debug)]
+pub struct ClaimFromApiArgs {
+    /// Merkle distributor path
+    #[clap(long, env, default_value = "https://worker.jup.ag/jup-claim-proof")]
+    root_api: String,
+    #[clap(long, env)]
+    destination_owner: Pubkey,
 }
 
 #[derive(Parser, Debug)]
@@ -445,6 +456,9 @@ fn main() {
         }
         Commands::Claim(claim_args) => {
             process_claim(&args, claim_args);
+        }
+        Commands::ClaimFromApi(claim_args) => {
+            process_claim_from_api(&args, claim_args);
         }
         Commands::Clawback(clawback_args) => process_clawback(&args, clawback_args),
         Commands::CreateMerkleTree(merkle_tree_args) => {

@@ -6,8 +6,8 @@ csv_path="${root}/list/tensor.csv"
 merkle_tree_path="${root}/proofs/mk/tensor"
 kv_path="${root}/proofs/kv/tensor"
 token_decimals=9
-token_mint="ETdfSQc9naEwJyhtE5EQL2R7fcRXUsw1DuFiX5Hk97RX"
-base_key="4w5sRAXNV6PKmp8bFNvo7XuTM8djZfzfxPfbHVfMcBW7"
+token_mint="4fu4KCXhtKacafbPL7Z4TyBUXyvxfmBqhkf9MdcwMwsz"
+base_key="22Uf9RMMT7MS1Wftthds36URvuq6k1bhNQRFufNrCJUp"
 ### END CONFIG ZONE
 
 
