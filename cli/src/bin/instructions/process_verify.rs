@@ -16,16 +16,22 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 
-        println!(
-            "Verify merkle tree airdrop version {}",
-            merkle_tree.airdrop_version
-        );
+        if let Some(airdrop_version) = verfify_args.airdrop_version {
+            if merkle_tree.airdrop_version != airdrop_version {
+                continue;
+            }
+        }
 
         let (distributor_pubkey, _bump) = get_merkle_distributor_pda(
             &args.program_id,
             &args.base,
             &args.mint,
             merkle_tree.airdrop_version,
+        );
+
+        println!(
+            "Verify merkle tree airdrop version {} {}",
+            merkle_tree.airdrop_version, distributor_pubkey
         );
 
         if !verfify_args.skip_verify_amount {

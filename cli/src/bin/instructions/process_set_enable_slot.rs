@@ -9,85 +9,28 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
     let program = args.get_program_client();
 
-    if set_enable_slot_args.airdrop_version.is_some() {
-        let airdrop_version = set_enable_slot_args.airdrop_version.unwrap();
-
+    let from_version = set_enable_slot_args.from_version;
+    let to_version = set_enable_slot_args.to_version;
+    for version in from_version..=to_version {
         let (distributor, _bump) =
-            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, airdrop_version);
-        let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
-        if distributor_state.enable_slot == set_enable_slot_args.slot {
-            println!("already set slot skip airdrop version {}", airdrop_version);
-            return;
-        }
-
-        let mut ixs = vec![];
-        // check priority fee
-        if let Some(priority_fee) = args.priority_fee {
-            ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
-                priority_fee,
-            ));
-        }
-
-        ixs.push(Instruction {
-            program_id: args.program_id,
-            accounts: merkle_distributor::accounts::SetEnableSlot {
-                distributor,
-                admin: keypair.pubkey(),
-            }
-            .to_account_metas(None),
-            data: merkle_distributor::instruction::SetEnableSlot {
-                enable_slot: set_enable_slot_args.slot,
-            }
-            .data(),
-        });
-
-        let tx = Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&keypair.pubkey()),
-            &[&keypair],
-            client.get_latest_blockhash().unwrap(),
-        );
-
-        let signature = client
-            .send_and_confirm_transaction_with_spinner(&tx)
-            .unwrap();
-
-        println!(
-            "Successfully set enable slot {} airdrop version {} ! signature: {signature:#?}",
-            set_enable_slot_args.slot, airdrop_version
-        );
-        return;
-    }
-
-    let mut paths: Vec<_> = fs::read_dir(&set_enable_slot_args.merkle_tree_path)
-        .unwrap()
-        .map(|r| r.unwrap())
-        .collect();
-    paths.sort_by_key(|dir| dir.path());
-
-    for file in paths {
-        let single_tree_path = file.path();
-
-        let merkle_tree =
-            AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
-
-        let (distributor, _bump) = get_merkle_distributor_pda(
-            &args.program_id,
-            &args.base,
-            &args.mint,
-            merkle_tree.airdrop_version,
-        );
+            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, version);
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
             if distributor_state.enable_slot == set_enable_slot_args.slot {
-                println!(
-                    "already set slot skip airdrop version {}",
-                    merkle_tree.airdrop_version
-                );
+                println!("already set slot skip airdrop version {}", version);
                 break;
             }
-            let set_admin_ix = Instruction {
+            let mut ixs = vec![];
+
+            // check priority fee
+            if let Some(priority_fee) = args.priority_fee {
+                ixs.push(ComputeBudgetInstruction::set_compute_unit_price(
+                    priority_fee,
+                ));
+            }
+
+            ixs.push(Instruction {
                 program_id: args.program_id,
                 accounts: merkle_distributor::accounts::SetEnableSlot {
                     distributor,
@@ -98,10 +41,10 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
                     enable_slot: set_enable_slot_args.slot,
                 }
                 .data(),
-            };
+            });
 
             let tx = Transaction::new_signed_with_payer(
-                &[set_admin_ix],
+                &ixs,
                 Some(&keypair.pubkey()),
                 &[&keypair],
                 client.get_latest_blockhash().unwrap(),
@@ -111,12 +54,12 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
                 Ok(signature) => {
                     println!(
                         "Successfully set enable slot {} airdrop version {} ! signature: {signature:#?}",
-                        set_enable_slot_args.slot, merkle_tree.airdrop_version
+                        set_enable_slot_args.slot, version
                     );
                     break;
                 }
                 Err(err) => {
-                    println!("airdrop version {} {}", merkle_tree.airdrop_version, err);
+                    println!("airdrop version {} {}", version, err);
                 }
             }
         }

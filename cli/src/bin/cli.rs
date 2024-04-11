@@ -183,7 +183,11 @@ pub struct VerifyArgs {
     pub admin: Pubkey,
 
     #[clap(long, env)]
+    pub airdrop_version: Option<u64>,
+
+    #[clap(long, env)]
     pub closable: bool,
+
     #[clap(long, env)]
     pub skip_verify_amount: bool,
 }
@@ -267,11 +271,10 @@ pub struct SetAdminArgs {
 
 #[derive(Parser, Debug)]
 pub struct SetEnableSlotArgs {
-    /// Merkle tree out path
     #[clap(long, env)]
-    pub merkle_tree_path: PathBuf,
+    pub from_version: u64,
     #[clap(long, env)]
-    pub airdrop_version: Option<u64>,
+    pub to_version: u64,
     #[clap(long, env)]
     pub slot: u64,
 }
