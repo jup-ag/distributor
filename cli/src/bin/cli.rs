@@ -54,7 +54,7 @@ pub struct Args {
     pub rpc_url: String,
 
     /// Send RPC url
-    #[clap(long, env)]
+    #[clap(long, env, default_value = "http://localhost:8899")]
     pub extra_send_rpc_url: String,
 
     /// Program id
