@@ -17,19 +17,18 @@ use instructions::*;
 pub mod error;
 pub mod instructions;
 pub mod state;
-use solana_security_txt::security_txt;
 
-declare_id!("DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j");
+declare_id!("KdisqEcXbXKaTrBFqeDLhMmBvymLTwj9GmhDcdJyGat");
 
-security_txt! {
-    // Required fields
+#[cfg(not(feature = "no-entrypoint"))]
+solana_security_txt::security_txt! {
     name: "Merkle Distributor",
-    project_url: "https://jup.ag/",
-    contacts: "email:feedback.raccoons.dev",
-    policy: "https://github.com/jup-ag/distributor",
+    project_url: "https://kamino.finance/",
+    contacts: "email:security@kamino.finance",
+    policy: "https://github.com/Kamino-Finance/distributor",
+
     // Optional Fields
-    preferred_languages: "en",
-    source_code: "https://github.com/jup-ag/distributor"
+    preferred_languages: "en"
 }
 
 #[program]

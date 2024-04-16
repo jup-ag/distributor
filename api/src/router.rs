@@ -18,7 +18,6 @@ use http::Request;
 use jito_merkle_tree::{airdrop_merkle_tree::UserProof, tree_node::TreeNode};
 use serde_derive::{Deserialize, Serialize};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 use tower::{
     buffer::BufferLayer, limit::RateLimitLayer, load_shed::LoadShedLayer, timeout::TimeoutLayer,
     ServiceBuilder,
@@ -121,7 +120,7 @@ async fn get_distributors(State(state): State<Arc<RouterState>>) -> Result<impl 
 }
 
 async fn root() -> impl IntoResponse {
-    "Jupiter Airdrop API"
+    "Kamino Airdrop API"
 }
 
 // #[cfg(test)]

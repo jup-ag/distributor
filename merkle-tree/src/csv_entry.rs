@@ -7,12 +7,12 @@ use crate::error::MerkleTreeError;
 pub type Result<T> = result::Result<T, MerkleTreeError>;
 
 /// Represents a single entry in a CSV
-#[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CsvEntry {
     /// Pubkey of the claimant; will be responsible for signing the claim
     pub pubkey: String,
     /// amount unlocked, (ui amount)
-    pub amount: u64,
+    pub amount: f64,
 }
 
 impl CsvEntry {
@@ -45,6 +45,6 @@ mod tests {
             entries[0].pubkey,
             "4SX6nqv5VRLMoNfYM5phvHgcBNcBEwUEES4qPPjf1EqS"
         );
-        assert_eq!(entries[0].amount, 1000);
+        assert_eq!(entries[0].amount, 1000.0);
     }
 }

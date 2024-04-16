@@ -30,7 +30,8 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
 }
 
 fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) -> Result<()> {
-    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
+    let send_client = RpcClient::new_with_commitment(&args.extra_send_rpc_url, CommitmentConfig::confirmed());
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
     let base = read_keypair_file(&new_distributor_args.base_path).unwrap();
     let mut paths: Vec<_> = fs::read_dir(&new_distributor_args.merkle_tree_path)
@@ -157,7 +158,7 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
         // If this fails, make sure to run it again.
 
         if new_distributor_args.skip_verify {
-            match client.send_transaction(&tx) {
+            match send_client.send_transaction(&tx) {
                 Ok(_) => {
                     println!(
                         "done create merkle distributor version {} {:?}",
@@ -171,7 +172,7 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
                 }
             }
         } else {
-            match client.send_and_confirm_transaction_with_spinner(&tx) {
+            match send_transaction::send_transaction(&tx, &client, &send_client) {
                 Ok(_) => {
                     println!(
                         "done create merkle distributor version {} {:?}",

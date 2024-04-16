@@ -1,5 +1,5 @@
 [package]
-name = "jupiter-airdrop-api"
+name = "kamino-airdrop-api"
 version = { workspace = true }
 edition = { workspace = true }
 

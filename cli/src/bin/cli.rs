@@ -16,7 +16,6 @@ use anchor_spl::token::{self, TokenAccount};
 use anyhow::Result;
 use bincode::deserialize;
 use clap::{Parser, Subcommand};
-use csv::Writer;
 use jito_merkle_tree::{
     airdrop_merkle_tree::AirdropMerkleTree,
     csv_entry::CsvEntry,
@@ -53,6 +52,10 @@ pub struct Args {
     /// RPC url
     #[clap(long, env, default_value = "http://localhost:8899")]
     pub rpc_url: String,
+
+    /// Send RPC url
+    #[clap(long, env)]
+    pub extra_send_rpc_url: String,
 
     /// Program id
     #[clap(long, env, default_value_t = merkle_distributor::id())]
@@ -104,15 +107,8 @@ pub enum Commands {
     SetEnableSlot(SetEnableSlotArgs),
     SetEnableSlotByTime(SetEnableSlotByTimeArgs),
 
-    CreateTestList(CreateTestListArgs),
-    CreateDummyCsv(CreateDummyCsv),
-    ExtendList(ExtendListArgs),
-
     FundAll(FundAllArgs),
     Verify(VerifyArgs),
-    FilterList(FilterListArgs),
-    FilterListFixed(FilterListFixedArgs),
-    FilterAndMergeList(FilterAndMergeListArgs),
     SlotByTime(SlotByTimeArgsArgs),
     /// generate kv proof
     GenerateKvProof(GenerateKvProofArgs),
@@ -253,10 +249,7 @@ pub struct CreateMerkleTreeArgs {
     pub max_nodes_per_tree: u64,
 
     #[clap(long, env)]
-    pub should_include_test_list: bool,
-
-    #[clap(long, env)]
-    pub amount: u64,
+    pub amount: f64,
     #[clap(long, env)]
     pub decimals: u32,
 }
@@ -476,35 +469,17 @@ fn main() {
         Commands::SetEnableSlotByTime(set_enable_slot_by_time_args) => {
             process_set_enable_slot_by_time(&args, set_enable_slot_by_time_args);
         }
-        Commands::CreateDummyCsv(test_args) => {
-            process_create_dummy_csv(test_args);
-        }
-        Commands::CreateTestList(create_test_list_args) => {
-            process_create_test_list(&args, create_test_list_args);
-        }
         Commands::FundAll(fund_all_args) => {
             process_fund_all(&args, fund_all_args);
         }
         Commands::Verify(verfiy_args) => {
             process_verify(&args, verfiy_args);
         }
-        Commands::ExtendList(extend_list_args) => {
-            process_extend_list(extend_list_args);
-        }
-        Commands::FilterList(filter_list_args) => {
-            process_filter_list(filter_list_args);
-        }
-        Commands::FilterListFixed(filter_list_args) => {
-            process_filter_list_fixed(filter_list_args);
-        }
         Commands::SlotByTime(slot_by_time_args) => {
             process_get_slot(&args, slot_by_time_args);
         }
         Commands::CloseClaimStatus(_args) => {
             process_close_claim_status(&args);
-        }
-        Commands::FilterAndMergeList(filter_and_merge_list_args) => {
-            process_filter_and_merge(filter_and_merge_list_args);
         }
         Commands::GenerateKvProof(generate_kv_proof_args) => {
             process_generate_kv_proof(&args, generate_kv_proof_args);
@@ -580,43 +555,4 @@ fn check_distributor_onchain_matches(
         }
     }
     Ok(())
-}
-
-fn get_pre_list() -> Vec<String> {
-    let list = vec![
-        "DHLXnJdACTY83yKwnUkeoDjqi4QBbsYGa1v8tJL76ViX",
-        "BULRqL3U2jPgwvz6HYCyBVq9BMtK94Y1Nz98KQop23aD",
-        "7w32LzRsJrQiE7S3ZSdkz9TSFGey1XNsonPmdm9xDUch",
-        "55pPhcCcp8gEKvKWr1JUkAcdwMeemmNhTHmkWNR9sJib",
-        "62ucxc2gd5TBCwzToEEWVV4M5drVK7Fi7aYozniqWtac",
-        "5unTfT2kssBuNvHPY6LbJfJpLqEcdMxGYLWHwShaeTLi",
-        "9zg3seAh4Er1Nz8GAuiciH437apxtzgUWBT8frhudevR",
-        "AjefJWRfjRCVNSQ1pHnTW8F7szLV7xFZftiB3yM5vnTa",
-        "8SEFruHjgNrnV8ak2Ff11wg9em8Nh72RWTwk359bRyzE",
-        "7jBypy9HX1dyLHPnmRnRubibNUaBPrShnERGnoE7rc3C",
-        "XWpxVfYTeKmmp18DPxqPvWFL7P1C2vbdegDPAbXkV1n",
-        "AuTFdqo4GsxpDgtag87pDaHE259cE94Z82kdpFozVBhC",
-        "6h43GsVT3TjtLa5nRpsXp15GDpAY4smWCYHgcq58dSPM",
-        "2mAax9cNqDXDg9eDJDby1tBh9Q8N3TS7qLhX9rMp8EVc",
-        "JBeYA7dmBGCNgaEdtqdoUnESwKJho5YvgXVNLgo4n3MM",
-        "HeTpE5BnNinzNv92MzVAGyVT5LjAwTWuk5qQcPURmi2L",
-        "Bidku3jkJUxiTzBJZroEfwPcUWueNUst9LrMbZQLhrtG",
-        "HUQytvb7WCCqbHnpQrVgXhmXSw4XfWMnmqCiKz6T1vsU",
-        "4zvTjdpyr3SAgLeSpCnq4KaHvX2j5SbkwxYydzbfqhRQ",
-        "EVfUfs9XNwJmfNvoazDbZVb6ecnGCxgQrJzsCQHoQ4q7",
-        "GMtwcuktJfrRcnyGktWW4Vab8cfjPcBy3xbuZgRegw6E",
-        "HAPdsaZFfQDG4bD8vzBbPCUawUWKSJxvhQ7TGg1BeAxZ",
-    ];
-    let list: Vec<String> = list.iter().map(|x| x.to_string()).collect();
-    list
-}
-
-fn get_test_list() -> Vec<String> {
-    let list = vec![
-        "62ucxc2gd5TBCwzToEEWVV4M5drVK7Fi7aYozniqWtac",
-        "HcrGezZ4vsveZ9vRX1vQU3WRiEzx8T4XcBBv9Hs9Smmd",
-        "DHLXnJdACTY83yKwnUkeoDjqi4QBbsYGa1v8tJL76ViX",
-    ];
-    let list: Vec<String> = list.iter().map(|x| x.to_string()).collect();
-    list
 }

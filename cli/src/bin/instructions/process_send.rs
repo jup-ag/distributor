@@ -85,6 +85,19 @@ fn send_for_batch_address(
     Ok((signature, qualified_address))
 }
 
+pub fn parse_new_record(path: &PathBuf) -> Result<Vec<String>> {
+    let file = File::open(path)?;
+    let mut rdr = csv::Reader::from_reader(file);
+
+    let mut entries = Vec::new();
+    for result in rdr.deserialize() {
+        let record: String = result.unwrap();
+        entries.push(record);
+    }
+
+    Ok(entries)
+}
+
 pub fn process_mass_send(args: &Args, mass_send_args: &MassSendArgs) {
     let addresses = parse_new_record(&mass_send_args.csv_path).unwrap();
 

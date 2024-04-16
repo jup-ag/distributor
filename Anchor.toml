@@ -18,16 +18,16 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [programs.mainnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "KdisqEcXbXKaTrBFqeDLhMmBvymLTwj9GmhDcdJyGat"
 
 [programs.devnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "KdisqEcXbXKaTrBFqeDLhMmBvymLTwj9GmhDcdJyGat"
 
 [programs.testnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "KdisqEcXbXKaTrBFqeDLhMmBvymLTwj9GmhDcdJyGat"
 
 [programs.localnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "KdisqEcXbXKaTrBFqeDLhMmBvymLTwj9GmhDcdJyGat"
 
 [scripts]
 test = "yarn mocha"

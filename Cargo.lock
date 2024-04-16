@@ -2192,7 +2192,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "jupiter-airdrop-api"
+name = "kamino-airdrop-api"
 version = "0.0.1"
 dependencies = [
  "anchor-lang",
