@@ -8,32 +8,16 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
     let program = args.get_program_client();
 
-    let mut paths: Vec<_> = fs::read_dir(&set_admin_args.merkle_tree_path)
-        .unwrap()
-        .map(|r| r.unwrap())
-        .collect();
-    paths.sort_by_key(|dir| dir.path());
-
-    for file in paths {
-        let single_tree_path = file.path();
-
-        let merkle_tree =
-            AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
-
-        let (distributor, _bump) = get_merkle_distributor_pda(
-            &args.program_id,
-            &args.base,
-            &args.mint,
-            merkle_tree.airdrop_version,
-        );
+    let from_version = set_admin_args.from_version;
+    let to_version = set_admin_args.from_version;
+    for i in from_version..=to_version {
+        let (distributor, _bump) =
+            get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, i);
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
             if distributor_state.admin == set_admin_args.new_admin {
-                println!(
-                    "already the same skip airdrop version {}",
-                    merkle_tree.airdrop_version
-                );
+                println!("already the same skip airdrop version {}", i);
                 break;
             }
             let mut ixs = vec![];
@@ -65,12 +49,12 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
                 Ok(signature) => {
                     println!(
                         "Successfully set admin {} airdrop version {} ! signature: {signature:#?}",
-                        set_admin_args.new_admin, merkle_tree.airdrop_version
+                        set_admin_args.new_admin, i
                     );
                     break;
                 }
                 Err(err) => {
-                    println!("airdrop version {} {}", merkle_tree.airdrop_version, err);
+                    println!("airdrop version {} {}", i, err);
                 }
             }
         }
