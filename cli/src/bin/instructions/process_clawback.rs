@@ -48,7 +48,7 @@ fn clawback(args: &Args, clawback_args: &ClawbackArgs) -> Result<()> {
         let distributor_state = program.account::<MerkleDistributor>(distributor)?;
         if distributor_state.clawed_back {
             println!("already clawback {}", version);
-            break;
+            continue;
         }
 
         let mut ixs = vec![];
