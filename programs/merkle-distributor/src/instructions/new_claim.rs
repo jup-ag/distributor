@@ -10,6 +10,7 @@ use jito_merkle_verify::verify;
 
 use crate::{
     error::ErrorCode,
+    math::SafeMath,
     state::{
         claim_status::ClaimStatus, claimed_event::NewClaimEvent,
         merkle_distributor::MerkleDistributor,
@@ -143,6 +144,8 @@ pub fn handle_new_claim(
         &[ctx.accounts.distributor.bump],
     ];
 
+    let bonus = distributor.get_bonus_for_a_claimaint(claim_status.unlocked_amount, curr_slot)?;
+    let amount_with_bonus = claim_status.unlocked_amount.safe_add(bonus)?;
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -153,14 +156,15 @@ pub fn handle_new_claim(
             },
         )
         .with_signer(&[&seeds[..]]),
-        claim_status.unlocked_amount,
+        amount_with_bonus,
     )?;
-
     let distributor = &mut ctx.accounts.distributor;
     distributor.total_amount_claimed = distributor
         .total_amount_claimed
-        .checked_add(claim_status.unlocked_amount)
+        .checked_add(amount_with_bonus)
         .ok_or(ErrorCode::ArithmeticError)?;
+
+    distributor.accumulate_bonus(bonus)?;
 
     require!(
         distributor.total_amount_claimed <= distributor.max_total_claim,
@@ -169,12 +173,14 @@ pub fn handle_new_claim(
 
     // Note: might get truncated, do not rely on
     msg!(
-        "Created new claim with locked {} and {} unlocked with lockup start:{} end:{}",
+        "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}",
         claim_status.locked_amount,
         claim_status.unlocked_amount,
+        bonus,
         distributor.start_ts,
         distributor.end_ts,
     );
+
     emit!(NewClaimEvent {
         claimant: claimant_account.key(),
         timestamp: curr_ts

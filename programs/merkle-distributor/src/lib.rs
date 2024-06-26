@@ -16,9 +16,10 @@ use instructions::*;
 
 pub mod error;
 pub mod instructions;
+pub mod math;
 pub mod state;
+use crate::error::ErrorCode::ArithmeticError;
 use solana_security_txt::security_txt;
-
 declare_id!("DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j");
 
 security_txt! {
@@ -78,6 +79,42 @@ pub mod merkle_distributor {
             clawback_start_ts,
             enable_slot,
             closable,
+            0,
+            0,
+        )
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn new_distributor2(
+        ctx: Context<NewDistributor>,
+        version: u64,
+        root: [u8; 32],
+        total_claim: u64,
+        max_num_nodes: u64,
+        start_vesting_ts: i64,
+        end_vesting_ts: i64,
+        clawback_start_ts: i64,
+        enable_slot: u64,
+        closable: bool,
+        total_bonus: u64,
+        bonus_vesting_slot_duration: u64,
+    ) -> Result<()> {
+        let max_total_claim = total_claim
+            .checked_add(total_bonus)
+            .ok_or(ArithmeticError)?;
+        handle_new_distributor(
+            ctx,
+            version,
+            root,
+            max_total_claim,
+            max_num_nodes,
+            start_vesting_ts,
+            end_vesting_ts,
+            clawback_start_ts,
+            enable_slot,
+            closable,
+            total_bonus,
+            bonus_vesting_slot_duration,
         )
     }
     /// only available in test phase
