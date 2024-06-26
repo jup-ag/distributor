@@ -136,7 +136,7 @@ pub fn handle_new_distributor(
     distributor.closable = closable;
     distributor.base = ctx.accounts.base.key();
     distributor.airdrop_bonus = AirdropBonus {
-        total_bonus: total_bonus,
+        total_bonus,
         vesting_slot_duration: bonus_vesting_slot_duration,
         total_claimed_bonus: 0,
     };
