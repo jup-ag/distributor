@@ -24,7 +24,7 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
 
     for file in paths {
         let single_tree_path = file.path();
-
+        // println!("file {:?}", file.file_name());
         let merkle_tree =
             AirdropMerkleTree::new_from_file(&single_tree_path).expect("failed to read");
 

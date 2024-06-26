@@ -51,10 +51,12 @@ fn fund_all(args: &Args, fund_all_args: &FundAllArgs) -> Result<()> {
             merkle_tree.airdrop_version,
         );
 
+        let distributor_state: MerkleDistributor = program.account(distributor_pubkey)?;
+
         let token_vault = get_associated_token_address(&distributor_pubkey, &args.mint);
 
         let token_vault_state: TokenAccount = program.account(token_vault)?;
-        if token_vault_state.amount >= merkle_tree.max_total_claim {
+        if token_vault_state.amount >= distributor_state.max_total_claim {
             println!(
                 "already fund airdrop version {}!",
                 merkle_tree.airdrop_version
@@ -76,7 +78,7 @@ fn fund_all(args: &Args, fund_all_args: &FundAllArgs) -> Result<()> {
                 &token_vault,
                 &keypair.pubkey(),
                 &[],
-                merkle_tree.max_total_claim,
+                distributor_state.max_total_claim,
             )
             .unwrap(),
         );

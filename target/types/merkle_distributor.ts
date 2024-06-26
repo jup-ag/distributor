@@ -170,6 +170,161 @@ export type MerkleDistributor = {
       ]
     },
     {
+      "name": "newDistributor2",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "MerkleDistributor"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "version"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
+        },
+        {
+          "name": "clawbackReceiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Clawback receiver token account"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "tokenVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token vault",
+            "Should create previously"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
+            "Also has the authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Associated Token] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u64"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "totalClaim",
+          "type": "u64"
+        },
+        {
+          "name": "maxNumNodes",
+          "type": "u64"
+        },
+        {
+          "name": "startVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "endVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "clawbackStartTs",
+          "type": "i64"
+        },
+        {
+          "name": "enableSlot",
+          "type": "u64"
+        },
+        {
+          "name": "closable",
+          "type": "bool"
+        },
+        {
+          "name": "totalBonus",
+          "type": "u64"
+        },
+        {
+          "name": "bonusVestingSlotDuration",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "closeDistributor",
       "docs": [
         "only available in test phase"
@@ -768,6 +923,15 @@ export type MerkleDistributor = {
             "type": "bool"
           },
           {
+            "name": "airdropBonus",
+            "docs": [
+              "bonus multiplier"
+            ],
+            "type": {
+              "defined": "AirdropBonus"
+            }
+          },
+          {
             "name": "buffer0",
             "docs": [
               "Buffer 0"
@@ -775,7 +939,7 @@ export type MerkleDistributor = {
             "type": {
               "array": [
                 "u8",
-                32
+                8
               ]
             }
           },
@@ -802,6 +966,34 @@ export type MerkleDistributor = {
                 32
               ]
             }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "AirdropBonus",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "vestingSlotDuration",
+            "type": "u64"
+          },
+          {
+            "name": "totalClaimedBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -1120,6 +1312,161 @@ export const IDL: MerkleDistributor = {
       ]
     },
     {
+      "name": "newDistributor2",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "MerkleDistributor"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "version"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
+        },
+        {
+          "name": "clawbackReceiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Clawback receiver token account"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "tokenVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token vault",
+            "Should create previously"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
+            "Also has the authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Associated Token] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u64"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "totalClaim",
+          "type": "u64"
+        },
+        {
+          "name": "maxNumNodes",
+          "type": "u64"
+        },
+        {
+          "name": "startVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "endVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "clawbackStartTs",
+          "type": "i64"
+        },
+        {
+          "name": "enableSlot",
+          "type": "u64"
+        },
+        {
+          "name": "closable",
+          "type": "bool"
+        },
+        {
+          "name": "totalBonus",
+          "type": "u64"
+        },
+        {
+          "name": "bonusVestingSlotDuration",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "closeDistributor",
       "docs": [
         "only available in test phase"
@@ -1718,6 +2065,15 @@ export const IDL: MerkleDistributor = {
             "type": "bool"
           },
           {
+            "name": "airdropBonus",
+            "docs": [
+              "bonus multiplier"
+            ],
+            "type": {
+              "defined": "AirdropBonus"
+            }
+          },
+          {
             "name": "buffer0",
             "docs": [
               "Buffer 0"
@@ -1725,7 +2081,7 @@ export const IDL: MerkleDistributor = {
             "type": {
               "array": [
                 "u8",
-                32
+                8
               ]
             }
           },
@@ -1752,6 +2108,34 @@ export const IDL: MerkleDistributor = {
                 32
               ]
             }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "AirdropBonus",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "vestingSlotDuration",
+            "type": "u64"
+          },
+          {
+            "name": "totalClaimedBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
           }
         ]
       }
