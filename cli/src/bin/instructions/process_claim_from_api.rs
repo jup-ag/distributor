@@ -20,6 +20,9 @@ pub fn process_claim_from_api(args: &Args, claim_args: &ClaimFromApiArgs) {
 
     let distributor = Pubkey::from_str(&kv_proof.merkle_tree).unwrap();
 
+    let program_client = args.get_program_client();
+    let distributor_state: MerkleDistributor = program_client.account(distributor).unwrap();
+
     let (claim_status_pda, _bump) = get_claim_status_pda(&args.program_id, &claimant, &distributor);
 
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
@@ -45,6 +48,14 @@ pub fn process_claim_from_api(args: &Args, claim_args: &ClaimFromApiArgs) {
         );
     }
 
+    let (escrow, _bump) = Pubkey::find_program_address(
+        &[
+            b"Escrow".as_ref(),
+            distributor_state.locker.as_ref(),
+            claimant.key().as_ref(),
+        ],
+        &locked_voter::ID,
+    );
     ixs.push(Instruction {
         program_id: args.program_id,
         accounts: merkle_distributor::accounts::NewClaim {
@@ -55,6 +66,10 @@ pub fn process_claim_from_api(args: &Args, claim_args: &ClaimFromApiArgs) {
             claimant,
             token_program: token::ID,
             system_program: solana_program::system_program::ID,
+            voter_program: locked_voter::ID,
+            locker: distributor_state.locker,
+            escrow,
+            escrow_tokens: get_associated_token_address(&escrow, &args.mint),
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::NewClaim {

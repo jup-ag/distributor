@@ -20,7 +20,7 @@ pub mod math;
 pub mod state;
 use crate::error::ErrorCode::ArithmeticError;
 use solana_security_txt::security_txt;
-declare_id!("DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j");
+declare_id!("Dis2TfkFnXFkrtvAktEkw37sdb7qwJgY6H7YZJwk51wK");
 
 security_txt! {
     // Required fields
@@ -67,6 +67,8 @@ pub mod merkle_distributor {
         clawback_start_ts: i64,
         enable_slot: u64,
         closable: bool,
+        locker: Pubkey,
+        min_locked_duration: u64,
     ) -> Result<()> {
         handle_new_distributor(
             ctx,
@@ -81,6 +83,8 @@ pub mod merkle_distributor {
             closable,
             0,
             0,
+            locker,
+            min_locked_duration,
         )
     }
 
@@ -98,6 +102,8 @@ pub mod merkle_distributor {
         closable: bool,
         total_bonus: u64,
         bonus_vesting_slot_duration: u64,
+        locker: Pubkey,
+        min_locked_duration: u64,
     ) -> Result<()> {
         let max_total_claim = total_claim
             .checked_add(total_bonus)
@@ -115,6 +121,8 @@ pub mod merkle_distributor {
             closable,
             total_bonus,
             bonus_vesting_slot_duration,
+            locker,
+            min_locked_duration,
         )
     }
     /// only available in test phase

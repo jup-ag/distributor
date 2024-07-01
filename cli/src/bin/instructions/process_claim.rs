@@ -16,6 +16,8 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
         &args.mint,
         merkle_tree.airdrop_version,
     );
+    let program_client = args.get_program_client();
+    let distributor_state: MerkleDistributor = program_client.account(distributor).unwrap();
     println!("distributor pubkey {}", distributor);
 
     let (claim_status_pda, _bump) = get_claim_status_pda(&args.program_id, &claimant, &distributor);
@@ -46,6 +48,14 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
 
     let claimant_ata = get_associated_token_address(&claimant, &args.mint);
 
+    let (escrow, _bump) = Pubkey::find_program_address(
+        &[
+            b"Escrow".as_ref(),
+            distributor_state.locker.as_ref(),
+            claimant.key().as_ref(),
+        ],
+        &locked_voter::ID,
+    );
     ixs.push(Instruction {
         program_id: args.program_id,
         accounts: merkle_distributor::accounts::ClaimLocked {
@@ -55,6 +65,10 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
             to: claimant_ata,
             claimant,
             token_program: token::ID,
+            voter_program: locked_voter::ID,
+            locker: distributor_state.locker,
+            escrow,
+            escrow_tokens: get_associated_token_address(&escrow, &args.mint),
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::ClaimLocked {}.data(),

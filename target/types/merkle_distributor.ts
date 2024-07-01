@@ -1,5 +1,5 @@
 export type MerkleDistributor = {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "merkle_distributor",
   "instructions": [
     {
@@ -166,6 +166,14 @@ export type MerkleDistributor = {
         {
           "name": "closable",
           "type": "bool"
+        },
+        {
+          "name": "locker",
+          "type": "publicKey"
+        },
+        {
+          "name": "minLockedDuration",
+          "type": "u64"
         }
       ]
     },
@@ -321,6 +329,14 @@ export type MerkleDistributor = {
         {
           "name": "bonusVestingSlotDuration",
           "type": "u64"
+        },
+        {
+          "name": "locker",
+          "type": "publicKey"
+        },
+        {
+          "name": "minLockedDuration",
+          "type": "u64"
         }
       ]
     },
@@ -445,6 +461,9 @@ export type MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
           ]
         },
         {
@@ -514,6 +533,54 @@ export type MerkleDistributor = {
           "docs": [
             "The [System] program."
           ]
+        },
+        {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "Escrow"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Locker",
+                "path": "locker"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "claimant"
+              }
+            ],
+            "programId": {
+              "kind": "account",
+              "type": "publicKey",
+              "path": "voter_program"
+            }
+          }
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": [
@@ -547,6 +614,9 @@ export type MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
           ]
         },
         {
@@ -609,6 +679,54 @@ export type MerkleDistributor = {
           "docs": [
             "SPL [Token] program."
           ]
+        },
+        {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "Escrow"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Locker",
+                "path": "locker"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "claimant"
+              }
+            ],
+            "programId": {
+              "kind": "account",
+              "type": "publicKey",
+              "path": "voter_program"
+            }
+          }
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": []
@@ -932,28 +1050,18 @@ export type MerkleDistributor = {
             }
           },
           {
-            "name": "buffer0",
+            "name": "minLockedDuration",
             "docs": [
-              "Buffer 0"
+              "min_locked_duration"
             ],
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
+            "type": "u64"
           },
           {
-            "name": "buffer1",
+            "name": "locker",
             "docs": [
-              "Buffer 1"
+              "locker"
             ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
+            "type": "publicKey"
           },
           {
             "name": "buffer2",
@@ -1136,12 +1244,17 @@ export type MerkleDistributor = {
       "code": 6020,
       "name": "CannotCloseClaimStatus",
       "msg": "Cannot close claim status"
+    },
+    {
+      "code": 6021,
+      "name": "RemaningLockedDurationIsTooSmall",
+      "msg": "Remaning locked duration is too small"
     }
   ]
 };
 
 export const IDL: MerkleDistributor = {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "merkle_distributor",
   "instructions": [
     {
@@ -1308,6 +1421,14 @@ export const IDL: MerkleDistributor = {
         {
           "name": "closable",
           "type": "bool"
+        },
+        {
+          "name": "locker",
+          "type": "publicKey"
+        },
+        {
+          "name": "minLockedDuration",
+          "type": "u64"
         }
       ]
     },
@@ -1463,6 +1584,14 @@ export const IDL: MerkleDistributor = {
         {
           "name": "bonusVestingSlotDuration",
           "type": "u64"
+        },
+        {
+          "name": "locker",
+          "type": "publicKey"
+        },
+        {
+          "name": "minLockedDuration",
+          "type": "u64"
         }
       ]
     },
@@ -1587,6 +1716,9 @@ export const IDL: MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
           ]
         },
         {
@@ -1656,6 +1788,54 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "The [System] program."
           ]
+        },
+        {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "Escrow"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Locker",
+                "path": "locker"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "claimant"
+              }
+            ],
+            "programId": {
+              "kind": "account",
+              "type": "publicKey",
+              "path": "voter_program"
+            }
+          }
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1689,6 +1869,9 @@ export const IDL: MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
           ]
         },
         {
@@ -1751,6 +1934,54 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "SPL [Token] program."
           ]
+        },
+        {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "Escrow"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Locker",
+                "path": "locker"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "claimant"
+              }
+            ],
+            "programId": {
+              "kind": "account",
+              "type": "publicKey",
+              "path": "voter_program"
+            }
+          }
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": []
@@ -2074,28 +2305,18 @@ export const IDL: MerkleDistributor = {
             }
           },
           {
-            "name": "buffer0",
+            "name": "minLockedDuration",
             "docs": [
-              "Buffer 0"
+              "min_locked_duration"
             ],
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
+            "type": "u64"
           },
           {
-            "name": "buffer1",
+            "name": "locker",
             "docs": [
-              "Buffer 1"
+              "locker"
             ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
+            "type": "publicKey"
           },
           {
             "name": "buffer2",
@@ -2278,6 +2499,11 @@ export const IDL: MerkleDistributor = {
       "code": 6020,
       "name": "CannotCloseClaimStatus",
       "msg": "Cannot close claim status"
+    },
+    {
+      "code": 6021,
+      "name": "RemaningLockedDurationIsTooSmall",
+      "msg": "Remaning locked duration is too small"
     }
   ]
 };
