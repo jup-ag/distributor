@@ -5,7 +5,7 @@ use anchor_lang::{
     prelude::*,
     Accounts, Result, ToAccountInfo,
 };
-use anchor_spl::token::{self, Token, TokenAccount};
+use anchor_spl::token::{Token, TokenAccount};
 
 use crate::{
     error::ErrorCode,
@@ -14,12 +14,14 @@ use crate::{
         merkle_distributor::MerkleDistributor,
     },
 };
+use locked_voter::{self as voter, Escrow};
+use locked_voter::{program::LockedVoter as Voter, Locker};
 
 /// [merkle_distributor::claim_locked] accounts.
 #[derive(Accounts)]
 pub struct ClaimLocked<'info> {
     /// The [MerkleDistributor].
-    #[account(mut)]
+    #[account(mut, has_one = locker)]
     pub distributor: Account<'info, MerkleDistributor>,
 
     /// Claim Status PDA
@@ -54,6 +56,29 @@ pub struct ClaimLocked<'info> {
 
     /// SPL [Token] program.
     pub token_program: Program<'info, Token>,
+
+    /// Voter program
+    pub voter_program: Program<'info, Voter>,
+
+    /// CHECK: Locker
+    #[account(mut)]
+    pub locker: Box<Account<'info, Locker>>,
+
+    /// CHECK: escrow
+    #[account(mut,
+             seeds = [
+                 b"Escrow".as_ref(),
+                 locker.key().as_ref(),
+                 claimant.key().as_ref()
+             ],
+             seeds::program = voter_program.key(),
+             bump
+         )]
+    pub escrow: Box<Account<'info, Escrow>>,
+
+    /// CHECK: escrow_tokens
+    #[account(mut)]
+    pub escrow_tokens: UncheckedAccount<'info>,
 }
 
 /// Claim locked tokens as they become unlocked.
@@ -69,6 +94,16 @@ pub fn handle_claim_locked(ctx: Context<ClaimLocked>) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
     let curr_ts = Clock::get()?.unix_timestamp;
     let curr_slot = Clock::get()?.slot;
+
+    let escrow = &ctx.accounts.escrow;
+    let locker = &ctx.accounts.locker;
+    let remaing_locked_duration = escrow
+        .get_remaining_duration_until_expiration(curr_ts, locker)
+        .unwrap();
+    require!(
+        remaing_locked_duration >= distributor.min_locked_duration,
+        ErrorCode::RemaningLockedDurationIsTooSmall
+    );
 
     require!(!distributor.clawed_back, ErrorCode::ClaimExpired);
 
@@ -89,19 +124,23 @@ pub fn handle_claim_locked(ctx: Context<ClaimLocked>) -> Result<()> {
         &distributor.version.to_le_bytes(),
         &[ctx.accounts.distributor.bump],
     ];
+    let seeds = &[&seeds[..]];
 
-    token::transfer(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            token::Transfer {
-                from: ctx.accounts.from.to_account_info(),
-                to: ctx.accounts.to.to_account_info(),
-                authority: ctx.accounts.distributor.to_account_info(),
-            },
-        )
-        .with_signer(&[&seeds[..]]),
-        amount,
-    )?;
+    // CPI to voter
+    let cpi_ctx = CpiContext::new(
+        ctx.accounts.voter_program.to_account_info(),
+        voter::cpi::accounts::IncreaseLockedAmount {
+            locker: ctx.accounts.locker.to_account_info(),
+            escrow: ctx.accounts.escrow.to_account_info(),
+            escrow_tokens: ctx.accounts.escrow_tokens.to_account_info(),
+            payer: ctx.accounts.distributor.to_account_info(),
+            source_tokens: ctx.accounts.from.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+        },
+    )
+    .with_signer(seeds);
+
+    voter::cpi::increase_locked_amount(cpi_ctx, amount)?;
 
     claim_status.locked_amount_withdrawn = claim_status
         .locked_amount_withdrawn
