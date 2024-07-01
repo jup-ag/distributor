@@ -9,7 +9,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
     for i in (1..10).rev() {
-        match create_new_distributor(args, new_distributor_args) {
+        match create_new_distributor(args, new_distributor_args, 0, 0) {
             Ok(_) => {
                 println!("Done create all distributors");
                 return;
@@ -21,7 +21,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                 );
                 thread::sleep(Duration::from_secs(5));
                 if i == 1 {
-                    create_new_distributor(args, new_distributor_args)
+                    create_new_distributor(args, new_distributor_args, 0, 0)
                         .expect("Failed to create distributors");
                 }
             }
@@ -29,7 +29,49 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
     }
 }
 
-fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) -> Result<()> {
+pub fn process_new_distributor_with_bonus(
+    args: &Args,
+    new_distributor_args: &NewDistributorWithBonusArgs,
+) {
+    println!("creating new distributor with args: {new_distributor_args:#?}");
+
+    for i in (1..10).rev() {
+        match create_new_distributor(
+            args,
+            &new_distributor_args.to_new_distributor_args(),
+            0,
+            new_distributor_args.bonus_vesting_duration,
+        ) {
+            Ok(_) => {
+                println!("Done create all distributors");
+                return;
+            }
+            Err(_) => {
+                println!(
+                    "Failed to create distributors, retrying, {} time remaining",
+                    i
+                );
+                thread::sleep(Duration::from_secs(5));
+                if i == 1 {
+                    create_new_distributor(
+                        args,
+                        &new_distributor_args.to_new_distributor_args(),
+                        new_distributor_args.bonus_multiplier,
+                        new_distributor_args.bonus_vesting_duration,
+                    )
+                    .expect("Failed to create distributors");
+                }
+            }
+        }
+    }
+}
+
+fn create_new_distributor(
+    args: &Args,
+    new_distributor_args: &NewDistributorArgs,
+    bonus_multiplier: u64,
+    bonus_vesting_duration: u64,
+) -> Result<()> {
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
     let base = read_keypair_file(&new_distributor_args.base_path).unwrap();
@@ -44,6 +86,11 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
         let single_tree_path = file.path();
 
         let merkle_tree = AirdropMerkleTree::new_from_file(&single_tree_path).unwrap();
+
+        let total_bonus = merkle_tree
+            .max_total_claim
+            .checked_mul(bonus_multiplier)
+            .unwrap();
 
         if new_distributor_args.airdrop_version.is_some() {
             let airdrop_version = new_distributor_args.airdrop_version.unwrap();
@@ -70,6 +117,8 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
                 &account,
                 &merkle_tree,
                 new_distributor_args,
+                total_bonus,
+                bonus_vesting_duration,
                 keypair.pubkey(),
                 base.pubkey(),
                 &args,
@@ -116,33 +165,65 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
             );
         }
 
-        ixs.push(Instruction {
-            program_id: args.program_id,
-            accounts: merkle_distributor::accounts::NewDistributor {
-                base: base.pubkey(),
-                clawback_receiver,
-                mint: args.mint,
-                token_vault,
-                distributor: distributor_pubkey,
-                system_program: solana_program::system_program::id(),
-                associated_token_program: spl_associated_token_account::ID,
-                token_program: token::ID,
-                admin: keypair.pubkey(),
-            }
-            .to_account_metas(None),
-            data: merkle_distributor::instruction::NewDistributor {
-                version: merkle_tree.airdrop_version,
-                root: merkle_tree.merkle_root,
-                max_total_claim: merkle_tree.max_total_claim,
-                max_num_nodes: merkle_tree.max_num_nodes,
-                start_vesting_ts: new_distributor_args.start_vesting_ts,
-                end_vesting_ts: new_distributor_args.end_vesting_ts,
-                clawback_start_ts: new_distributor_args.clawback_start_ts,
-                enable_slot: new_distributor_args.enable_slot,
-                closable: new_distributor_args.closable,
-            }
-            .data(),
-        });
+        if total_bonus == 0 {
+            ixs.push(Instruction {
+                program_id: args.program_id,
+                accounts: merkle_distributor::accounts::NewDistributor {
+                    base: base.pubkey(),
+                    clawback_receiver,
+                    mint: args.mint,
+                    token_vault,
+                    distributor: distributor_pubkey,
+                    system_program: solana_program::system_program::id(),
+                    associated_token_program: spl_associated_token_account::ID,
+                    token_program: token::ID,
+                    admin: keypair.pubkey(),
+                }
+                .to_account_metas(None),
+                data: merkle_distributor::instruction::NewDistributor {
+                    version: merkle_tree.airdrop_version,
+                    root: merkle_tree.merkle_root,
+                    max_total_claim: merkle_tree.max_total_claim,
+                    max_num_nodes: merkle_tree.max_num_nodes,
+                    start_vesting_ts: new_distributor_args.start_vesting_ts,
+                    end_vesting_ts: new_distributor_args.end_vesting_ts,
+                    clawback_start_ts: new_distributor_args.clawback_start_ts,
+                    enable_slot: new_distributor_args.enable_slot,
+                    closable: new_distributor_args.closable,
+                }
+                .data(),
+            });
+        } else {
+            ixs.push(Instruction {
+                program_id: args.program_id,
+                accounts: merkle_distributor::accounts::NewDistributor {
+                    base: base.pubkey(),
+                    clawback_receiver,
+                    mint: args.mint,
+                    token_vault,
+                    distributor: distributor_pubkey,
+                    system_program: solana_program::system_program::id(),
+                    associated_token_program: spl_associated_token_account::ID,
+                    token_program: token::ID,
+                    admin: keypair.pubkey(),
+                }
+                .to_account_metas(None),
+                data: merkle_distributor::instruction::NewDistributor2 {
+                    version: merkle_tree.airdrop_version,
+                    root: merkle_tree.merkle_root,
+                    total_claim: merkle_tree.max_total_claim,
+                    max_num_nodes: merkle_tree.max_num_nodes,
+                    start_vesting_ts: new_distributor_args.start_vesting_ts,
+                    end_vesting_ts: new_distributor_args.end_vesting_ts,
+                    clawback_start_ts: new_distributor_args.clawback_start_ts,
+                    enable_slot: new_distributor_args.enable_slot,
+                    closable: new_distributor_args.closable,
+                    total_bonus,
+                    bonus_vesting_slot_duration: bonus_vesting_duration,
+                }
+                .data(),
+            });
+        }
 
         let blockhash = client.get_latest_blockhash().unwrap();
         let tx = Transaction::new_signed_with_payer(
@@ -194,6 +275,8 @@ fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs
                   &account,
                   &merkle_tree,
                   new_distributor_args,
+                  total_bonus,
+                  bonus_vesting_duration,
                   keypair.pubkey(),
                   base.pubkey(),
                   args,
