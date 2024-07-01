@@ -1820,6 +1820,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "govern"
+version = "0.1.0"
+source = "git+https://github.com/TeamRaccoons/WAGMI?rev=425ac5e3a51f15831c825874e531409d4dc12c71#425ac5e3a51f15831c825874e531409d4dc12c71"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "num-traits",
+ "smart-wallet",
+ "vipers",
+]
+
+[[package]]
 name = "h2"
 version = "0.3.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2252,6 +2264,7 @@ dependencies = [
  "clap 3.2.25",
  "csv",
  "jito-merkle-tree",
+ "locked-voter",
  "merkle-distributor",
  "rand 0.7.3",
  "reqwest",
@@ -2382,6 +2395,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "locked-voter"
+version = "0.2.0"
+source = "git+https://github.com/TeamRaccoons/WAGMI?rev=425ac5e3a51f15831c825874e531409d4dc12c71#425ac5e3a51f15831c825874e531409d4dc12c71"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "govern",
+ "num-traits",
+ "vipers",
+]
+
+[[package]]
 name = "log"
 version = "0.4.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2443,6 +2468,7 @@ dependencies = [
  "anchor-spl",
  "bytemuck",
  "jito-merkle-verify",
+ "locked-voter",
  "solana-program",
  "solana-security-txt",
 ]
@@ -3885,6 +3911,15 @@ name = "smallvec"
 version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4dccd0940a2dcdf68d092b8cbab7dc0ad8fa938bf95787e1b916b0e3d0e8e970"
+
+[[package]]
+name = "smart-wallet"
+version = "0.1.0"
+source = "git+https://github.com/TeamRaccoons/WAGMI?rev=425ac5e3a51f15831c825874e531409d4dc12c71#425ac5e3a51f15831c825874e531409d4dc12c71"
+dependencies = [
+ "anchor-lang",
+ "vipers",
+]
 
 [[package]]
 name = "socket2"
@@ -5601,6 +5636,16 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vipers"
+version = "0.1.0"
+source = "git+https://github.com/TeamRaccoons/WAGMI?rev=425ac5e3a51f15831c825874e531409d4dc12c71#425ac5e3a51f15831c825874e531409d4dc12c71"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "num-traits",
+]
 
 [[package]]
 name = "void"

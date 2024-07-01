@@ -60,3 +60,4 @@ tracing = { version = "0.1.37" }
 tracing-core = "0.1.32"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 rust_decimal = "1.35.0"
+locked-voter = { git = "https://github.com/TeamRaccoons/WAGMI", rev = "425ac5e3a51f15831c825874e531409d4dc12c71" }
