@@ -10,7 +10,7 @@ pub fn process_extend_list(extend_list_args: &ExtendListArgs) {
             println!("{} is not pubkey", node.pubkey);
             continue;
         }
-        pre_list.push((addr.unwrap(), node.amount));
+        pre_list.push((addr.unwrap(), node.amount.clone()));
     }
 
     for node in test_list.iter() {
@@ -19,7 +19,7 @@ pub fn process_extend_list(extend_list_args: &ExtendListArgs) {
             println!("{} is not pubkey", node);
             continue;
         }
-        pre_list.push((addr.unwrap(), extend_list_args.amount));
+        pre_list.push((addr.unwrap(), extend_list_args.amount.to_string()));
     }
 
     // remove duplicate
@@ -30,7 +30,7 @@ pub fn process_extend_list(extend_list_args: &ExtendListArgs) {
     // let pre_list: Vec<String> = get_pre_list();
     let mut full_list = vec![];
     for _i in 0..(extend_list_args.num_records - full_list.len() as u64) {
-        full_list.push((Pubkey::new_unique(), extend_list_args.amount));
+        full_list.push((Pubkey::new_unique(), extend_list_args.amount.to_string()));
     }
     // // merge with pre_list
     let num_node = extend_list_args

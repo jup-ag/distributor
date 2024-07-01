@@ -1,3 +1,5 @@
+use jito_merkle_tree::tree_node::ui_amount_to_token_amount;
+
 use crate::*;
 
 /// filter from pubkey only
@@ -39,9 +41,6 @@ pub fn process_filter_list(filter_list_args: &FilterListArgs) {
     wtr.flush().unwrap();
 }
 
-
-
-
 /// filter from pubkey only
 pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
     let community_list = CsvEntry::new_from_file(&filter_list_args.csv_path).unwrap();
@@ -54,8 +53,10 @@ pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
             println!("{} is not pubkey", node.pubkey);
             continue;
         }
-        full_list.push((addr.unwrap(), node.amount));
-        total_amount = total_amount.checked_add(node.amount).unwrap();
+        full_list.push((addr.unwrap(), node.amount.clone()));
+        total_amount = total_amount
+            .checked_add(ui_amount_to_token_amount(&node.amount, 0))
+            .unwrap();
     }
 
     // remove duplicate

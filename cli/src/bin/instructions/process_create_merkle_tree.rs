@@ -57,7 +57,7 @@ pub fn process_create_merkle_tree(merkle_tree_args: &CreateMerkleTreeArgs) {
             .into_iter()
             .map(|x| CsvEntry {
                 pubkey: x,
-                amount: merkle_tree_args.amount,
+                amount: merkle_tree_args.amount.to_string(),
             })
             .collect::<Vec<CsvEntry>>();
 
