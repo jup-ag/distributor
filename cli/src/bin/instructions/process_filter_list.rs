@@ -55,7 +55,10 @@ pub fn process_filter_list_fixed(filter_list_args: &FilterListFixedArgs) {
         }
         full_list.push((addr.unwrap(), node.amount.clone()));
         total_amount = total_amount
-            .checked_add(ui_amount_to_token_amount(&node.amount, 0))
+            .checked_add(ui_amount_to_token_amount(
+                &node.amount,
+                filter_list_args.decimals,
+            ))
             .unwrap();
     }
 

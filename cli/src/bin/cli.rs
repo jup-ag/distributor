@@ -359,6 +359,8 @@ pub struct FilterListFixedArgs {
     pub csv_path: PathBuf,
     #[clap(long, env)]
     pub destination_path: String,
+    #[clap(long, env)]
+    pub decimals: u32,
 }
 
 #[derive(Parser, Debug)]
