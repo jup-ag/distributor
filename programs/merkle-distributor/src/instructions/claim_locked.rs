@@ -96,14 +96,7 @@ pub fn handle_claim_locked(ctx: Context<ClaimLocked>) -> Result<()> {
     let curr_slot = Clock::get()?.slot;
 
     let escrow = &ctx.accounts.escrow;
-    let locker = &ctx.accounts.locker;
-    let remaing_locked_duration = escrow
-        .get_remaining_duration_until_expiration(curr_ts, locker)
-        .unwrap();
-    require!(
-        remaing_locked_duration >= distributor.min_locked_duration,
-        ErrorCode::RemaningLockedDurationIsTooSmall
-    );
+    require!(escrow.is_max_lock, ErrorCode::EscrowIsNotMaxLock);
 
     require!(!distributor.clawed_back, ErrorCode::ClaimExpired);
 

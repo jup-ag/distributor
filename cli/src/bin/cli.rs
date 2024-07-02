@@ -243,9 +243,6 @@ pub struct NewDistributorArgs {
 
     #[clap(long, env)]
     pub locker: Pubkey,
-
-    #[clap(long, env)]
-    pub min_stake_duration: u64,
 }
 
 // NewDistributor subcommand args
@@ -291,9 +288,6 @@ pub struct NewDistributorWithBonusArgs {
     pub locker: Pubkey,
 
     #[clap(long, env)]
-    pub min_stake_duration: u64,
-
-    #[clap(long, env)]
     pub bonus_vesting_duration: u64,
 
     #[clap(long, env)]
@@ -314,7 +308,6 @@ impl NewDistributorWithBonusArgs {
             base_path: self.base_path.clone(),
             clawback_receiver_owner: self.clawback_receiver_owner,
             locker: self.locker,
-            min_stake_duration: self.min_stake_duration,
         }
     }
 }
@@ -635,7 +628,6 @@ fn check_distributor_onchain_matches(
     total_bonus: u64,
     bonus_vesting_duration: u64,
     locker: Pubkey,
-    min_locked_duration: u64,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -689,10 +681,6 @@ fn check_distributor_onchain_matches(
 
         if distributor.locker != locker {
             return Err("locker mismatch");
-        }
-
-        if distributor.min_locked_duration != min_locked_duration {
-            return Err("min_locked_duration mismatch");
         }
 
         // TODO fix code

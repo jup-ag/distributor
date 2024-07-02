@@ -46,7 +46,7 @@ pub struct MerkleDistributor {
     /// bonus multiplier
     pub airdrop_bonus: AirdropBonus,
     /// min_locked_duration
-    pub min_locked_duration: u64,
+    pub buffer_1: u64,
     /// locker
     pub locker: Pubkey,
     /// Buffer 2

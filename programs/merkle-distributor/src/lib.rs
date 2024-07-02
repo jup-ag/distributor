@@ -68,7 +68,6 @@ pub mod merkle_distributor {
         enable_slot: u64,
         closable: bool,
         locker: Pubkey,
-        min_locked_duration: u64,
     ) -> Result<()> {
         handle_new_distributor(
             ctx,
@@ -84,7 +83,6 @@ pub mod merkle_distributor {
             0,
             0,
             locker,
-            min_locked_duration,
         )
     }
 
@@ -103,7 +101,6 @@ pub mod merkle_distributor {
         total_bonus: u64,
         bonus_vesting_slot_duration: u64,
         locker: Pubkey,
-        min_locked_duration: u64,
     ) -> Result<()> {
         let max_total_claim = total_claim
             .checked_add(total_bonus)
@@ -122,7 +119,6 @@ pub mod merkle_distributor {
             total_bonus,
             bonus_vesting_slot_duration,
             locker,
-            min_locked_duration,
         )
     }
     /// only available in test phase
