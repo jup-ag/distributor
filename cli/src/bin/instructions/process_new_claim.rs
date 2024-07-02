@@ -5,6 +5,7 @@ use crate::*;
 pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
+    let program_client = args.get_program_client();
     let claimant = keypair.pubkey();
     println!("Claiming tokens for user {}...", claimant);
 
@@ -17,6 +18,8 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
         &args.mint,
         merkle_tree.airdrop_version,
     );
+
+    let distributor_state: MerkleDistributor = program_client.account(distributor).unwrap();
 
     // Get user's node in claim
     let node = merkle_tree.get_node(&claimant);
@@ -54,6 +57,14 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
         }
     }
 
+    let (escrow, _bump) = Pubkey::find_program_address(
+        &[
+            b"Escrow".as_ref(),
+            distributor_state.locker.as_ref(),
+            claimant.key().as_ref(),
+        ],
+        &locked_voter::ID,
+    );
     ixs.push(Instruction {
         program_id: args.program_id,
         accounts: merkle_distributor::accounts::NewClaim {
@@ -64,6 +75,10 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
             claimant,
             token_program: token::ID,
             system_program: solana_program::system_program::ID,
+            voter_program: locked_voter::ID,
+            locker: distributor_state.locker,
+            escrow,
+            escrow_tokens: get_associated_token_address(&escrow, &args.mint),
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::NewClaim {

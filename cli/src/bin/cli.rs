@@ -240,6 +240,9 @@ pub struct NewDistributorArgs {
     /// Clawback receiver owner
     #[clap(long, env)]
     pub clawback_receiver_owner: Pubkey,
+
+    #[clap(long, env)]
+    pub locker: Pubkey,
 }
 
 // NewDistributor subcommand args
@@ -282,6 +285,9 @@ pub struct NewDistributorWithBonusArgs {
     pub clawback_receiver_owner: Pubkey,
 
     #[clap(long, env)]
+    pub locker: Pubkey,
+
+    #[clap(long, env)]
     pub bonus_vesting_duration: u64,
 
     #[clap(long, env)]
@@ -301,6 +307,7 @@ impl NewDistributorWithBonusArgs {
             skip_verify: self.skip_verify,
             base_path: self.base_path.clone(),
             clawback_receiver_owner: self.clawback_receiver_owner,
+            locker: self.locker,
         }
     }
 }
@@ -620,6 +627,7 @@ fn check_distributor_onchain_matches(
     new_distributor_args: &NewDistributorArgs,
     total_bonus: u64,
     bonus_vesting_duration: u64,
+    locker: Pubkey,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -669,6 +677,10 @@ fn check_distributor_onchain_matches(
 
         if distributor.airdrop_bonus.vesting_slot_duration != bonus_vesting_duration {
             return Err("bonus_vesting_duration mismatch");
+        }
+
+        if distributor.locker != locker {
+            return Err("locker mismatch");
         }
 
         // TODO fix code

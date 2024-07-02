@@ -45,4 +45,6 @@ pub enum ErrorCode {
     CannotCloseDistributor,
     #[msg("Cannot close claim status")]
     CannotCloseClaimStatus,
+    #[msg("Escrow is not max lock")]
+    EscrowIsNotMaxLock,
 }

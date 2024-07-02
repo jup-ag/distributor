@@ -119,6 +119,7 @@ fn create_new_distributor(
                 new_distributor_args,
                 total_bonus,
                 bonus_vesting_duration,
+                new_distributor_args.locker,
                 keypair.pubkey(),
                 base.pubkey(),
                 &args,
@@ -190,6 +191,7 @@ fn create_new_distributor(
                     clawback_start_ts: new_distributor_args.clawback_start_ts,
                     enable_slot: new_distributor_args.enable_slot,
                     closable: new_distributor_args.closable,
+                    locker: new_distributor_args.locker,
                 }
                 .data(),
             });
@@ -220,6 +222,7 @@ fn create_new_distributor(
                     closable: new_distributor_args.closable,
                     total_bonus,
                     bonus_vesting_slot_duration: bonus_vesting_duration,
+                    locker: new_distributor_args.locker,
                 }
                 .data(),
             });
@@ -277,6 +280,7 @@ fn create_new_distributor(
                   new_distributor_args,
                   total_bonus,
                   bonus_vesting_duration,
+                  new_distributor_args.locker,
                   keypair.pubkey(),
                   base.pubkey(),
                   args,

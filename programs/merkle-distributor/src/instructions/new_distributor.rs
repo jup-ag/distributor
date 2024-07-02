@@ -88,6 +88,7 @@ pub fn handle_new_distributor(
     closable: bool,
     total_bonus: u64,
     bonus_vesting_slot_duration: u64,
+    locker: Pubkey,
 ) -> Result<()> {
     let curr_ts = Clock::get()?.unix_timestamp;
 
@@ -140,10 +141,11 @@ pub fn handle_new_distributor(
         vesting_slot_duration: bonus_vesting_slot_duration,
         total_claimed_bonus: 0,
     };
+    distributor.locker = locker;
 
     // Note: might get truncated, do not rely on
     msg! {
-        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} enable_slot {} total_bonus {}, bonus_vesting_slot_duration {}",
+        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} enable_slot {} total_bonus {}, bonus_vesting_slot_duration {}, locker {}",
             distributor.version,
             distributor.mint,
             ctx.accounts.token_vault.key(),
@@ -156,6 +158,7 @@ pub fn handle_new_distributor(
             distributor.enable_slot,
             distributor.airdrop_bonus.total_bonus,
             distributor.airdrop_bonus.vesting_slot_duration,
+            distributor.locker,
     };
 
     Ok(())
