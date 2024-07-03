@@ -92,6 +92,9 @@ pub enum Commands {
     ClaimFromApi(ClaimFromApiArgs),
     /// Create a new instance of a merkle distributor
     NewDistributor(NewDistributorArgs),
+    /// Create a new instance of a merkle distributor
+    NewDistributorWithBonus(NewDistributorWithBonusArgs),
+
     CloseDistributor(CloseDistributorArgs),
     CloseClaimStatus(CloseClaimStatusArgs),
     /// Clawback tokens from merkle distributor
@@ -126,6 +129,7 @@ pub enum Commands {
     SetClawbackReceiver(ClawbackReceiverArgs),
 
     ViewDistributors(ViewDistributorsArgs),
+    ViewDistributorByPubkey(ViewDistributorByPubkeyArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -190,6 +194,12 @@ pub struct VerifyArgs {
 
     #[clap(long, env)]
     pub skip_verify_amount: bool,
+
+    #[clap(long, env)]
+    pub bonus_vesting_duration: u64,
+
+    #[clap(long, env)]
+    pub bonus_multiplier: u64,
 }
 
 // NewDistributor subcommand args
@@ -230,6 +240,69 @@ pub struct NewDistributorArgs {
     /// Clawback receiver owner
     #[clap(long, env)]
     pub clawback_receiver_owner: Pubkey,
+}
+
+// NewDistributor subcommand args
+#[derive(Parser, Debug)]
+pub struct NewDistributorWithBonusArgs {
+    /// Lockup timestamp start
+    #[clap(long, env)]
+    pub start_vesting_ts: i64,
+
+    /// Lockup timestamp end (unix timestamp)
+    #[clap(long, env)]
+    pub end_vesting_ts: i64,
+
+    /// Merkle distributor path
+    #[clap(long, env)]
+    pub merkle_tree_path: PathBuf,
+
+    /// When to make the clawback period start. Must be at least a day after the end_vesting_ts
+    #[clap(long, env)]
+    pub clawback_start_ts: i64,
+
+    #[clap(long, env)]
+    pub enable_slot: u64,
+
+    #[clap(long, env)]
+    pub airdrop_version: Option<u64>,
+
+    #[clap(long, env)]
+    pub closable: bool,
+
+    #[clap(long, env)]
+    pub skip_verify: bool,
+
+    /// Base keypair
+    #[clap(long, env)]
+    pub base_path: String,
+
+    /// Clawback receiver owner
+    #[clap(long, env)]
+    pub clawback_receiver_owner: Pubkey,
+
+    #[clap(long, env)]
+    pub bonus_vesting_duration: u64,
+
+    #[clap(long, env)]
+    pub bonus_multiplier: u64,
+}
+
+impl NewDistributorWithBonusArgs {
+    pub fn to_new_distributor_args(&self) -> NewDistributorArgs {
+        NewDistributorArgs {
+            start_vesting_ts: self.start_vesting_ts,
+            end_vesting_ts: self.end_vesting_ts,
+            merkle_tree_path: self.merkle_tree_path.clone(),
+            clawback_start_ts: self.clawback_start_ts,
+            enable_slot: self.enable_slot,
+            airdrop_version: self.airdrop_version,
+            closable: self.closable,
+            skip_verify: self.skip_verify,
+            base_path: self.base_path.clone(),
+            clawback_receiver_owner: self.clawback_receiver_owner,
+        }
+    }
 }
 
 #[derive(Parser, Debug)]
@@ -453,12 +526,21 @@ pub struct ViewDistributorsArgs {
     pub to_version: u64,
 }
 
+#[derive(Parser, Debug)]
+pub struct ViewDistributorByPubkeyArgs {
+    #[clap(long, env)]
+    pub pubkey: Pubkey,
+}
+
 fn main() {
     let args = Args::parse();
 
     match &args.command {
         Commands::NewDistributor(new_distributor_args) => {
             process_new_distributor(&args, new_distributor_args);
+        }
+        Commands::NewDistributorWithBonus(new_distributor_with_bonus_args) => {
+            process_new_distributor_with_bonus(&args, new_distributor_with_bonus_args);
         }
         Commands::CloseDistributor(close_distributor_args) => {
             process_close_distributor(&args, close_distributor_args);
@@ -523,6 +605,9 @@ fn main() {
         Commands::ViewDistributors(view_distributors_args) => {
             view_distributors(&args, view_distributors_args)
         }
+        Commands::ViewDistributorByPubkey(sub_args) => {
+            view_distributor_by_pubkey(&args, &sub_args.pubkey)
+        }
         Commands::SetClawbackReceiver(set_clawback_receiver_argrs) => {
             process_set_clawback_receiver(&args, set_clawback_receiver_argrs)
         }
@@ -533,6 +618,8 @@ fn check_distributor_onchain_matches(
     account: &Account,
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
+    total_bonus: u64,
+    bonus_vesting_duration: u64,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -546,7 +633,12 @@ fn check_distributor_onchain_matches(
             return Err("base mismatch");
         }
 
-        if distributor.max_total_claim != merkle_tree.max_total_claim {
+        if distributor.max_total_claim
+            != merkle_tree
+                .max_total_claim
+                .checked_add(total_bonus)
+                .unwrap()
+        {
             return Err("max_total_claim mismatch");
         }
         if distributor.max_num_nodes != merkle_tree.max_num_nodes {
@@ -569,6 +661,14 @@ fn check_distributor_onchain_matches(
 
         if distributor.closable != new_distributor_args.closable {
             return Err("closable mismatch");
+        }
+
+        if distributor.airdrop_bonus.total_bonus != total_bonus {
+            return Err("total_bonus mismatch");
+        }
+
+        if distributor.airdrop_bonus.vesting_slot_duration != bonus_vesting_duration {
+            return Err("bonus_vesting_duration mismatch");
         }
 
         // TODO fix code

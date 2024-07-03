@@ -33,10 +33,14 @@ pub fn process_filter_list(filter_list_args: &FilterListArgs) {
 
     let mut wtr = Writer::from_path(&filter_list_args.destination_path).unwrap();
     wtr.write_record(&["pubkey", "amount"]).unwrap();
+    let mut total_amount = 0u64;
     for address in full_list.iter() {
         wtr.write_record(&[address.0.to_string(), address.1.to_string()])
             .unwrap();
+        total_amount += address.1;
     }
+
+    println!("total amount {}", total_amount);
 
     wtr.flush().unwrap();
 }
