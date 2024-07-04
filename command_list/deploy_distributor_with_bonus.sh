@@ -25,6 +25,8 @@ enable_slot="[Enable slot]"
 # the address that will receive token that user haven't claimed yet, should be team's multisig
 clawback_receiver_owner="[Clawback receiver owner]"  
 
+bonus_vesting_duration="[Bonus vesting duration]"
+bonus_multiplier="[Bonus multiplier]"
 
 ## caculated variable, can ignore this
 # kv_path="[path to kv proofs]"
@@ -39,10 +41,10 @@ echo "create merkle tree proof"
 target/debug/cli create-merkle-tree --csv-path $csv_path --merkle-tree-path $merkle_tree_path --max-nodes-per-tree $max_nodes_per_tree --amount 0 --decimals $token_decimals
 
 echo "deploy distributor"
-target/debug/cli --mint $token_mint --priority-fee $priority_fee --keypair-path $keypair_path --rpc-url $rpc new-distributor --start-vesting-ts $start_vesting_ts --end-vesting-ts $end_vesting_ts --merkle-tree-path $merkle_tree_path --base-path $base_path --clawback-start-ts $clawback_start_ts --enable-slot $enable_slot --clawback-receiver-owner $clawback_receiver_owner --closable
+target/debug/cli --mint $token_mint --priority-fee $priority_fee --keypair-path $keypair_path --rpc-url $rpc new-distributor-with-bonus --start-vesting-ts $start_vesting_ts --end-vesting-ts $end_vesting_ts --merkle-tree-path $merkle_tree_path --base-path $base_path --clawback-start-ts $clawback_start_ts --enable-slot $enable_slot --clawback-receiver-owner $clawback_receiver_owner --closable --bonus-vesting-duration $bonus_vesting_duration --bonus-multiplier $bonus_multiplier
 
 echo "fund distributor"
 target/debug/cli --mint $token_mint --priority-fee $priority_fee --base $base_key --keypair-path $keypair_path --rpc-url $rpc fund-all --merkle-tree-path $merkle_tree_path
 
 echo "verify"
-target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc verify --merkle-tree-path $merkle_tree_path --clawback-start-ts $clawback_start_ts --enable-slot  $enable_slot --admin $admin --clawback-receiver-owner $clawback_receiver_owner --closable --bonus-vesting-duration 0 --bonus-multiplier 1
+target/debug/cli --mint $token_mint --base $base_key --rpc-url $rpc verify --merkle-tree-path $merkle_tree_path --clawback-start-ts $clawback_start_ts --enable-slot  $enable_slot --admin $admin --clawback-receiver-owner $clawback_receiver_owner --closable --bonus-vesting-duration $bonus_vesting_duration --bonus-multiplier $bonus_multiplier
