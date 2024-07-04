@@ -1,29 +1,9 @@
 {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "merkle_distributor",
   "instructions": [
     {
       "name": "newDistributor",
-      "docs": [
-        "READ THE FOLLOWING:",
-        "",
-        "This instruction is susceptible to frontrunning that could result in loss of funds if not handled properly.",
-        "",
-        "An attack could look like:",
-        "- A legitimate user opens a new distributor.",
-        "- Someone observes the call to this instruction.",
-        "- They replace the clawback_receiver, admin, or time parameters with their own.",
-        "",
-        "One situation that could happen here is the attacker replaces the admin and clawback_receiver with their own",
-        "and sets the clawback_start_ts with the minimal time allowed. After clawback_start_ts has elapsed,",
-        "the attacker can steal all funds from the distributor to their own clawback_receiver account.",
-        "",
-        "HOW TO AVOID:",
-        "- When you call into this instruction, ensure your transaction succeeds.",
-        "- To be extra safe, after your transaction succeeds, read back the state of the created MerkleDistributor account and",
-        "assert the parameters are what you expect, most importantly the clawback_receiver and admin.",
-        "- If your transaction fails, double check the value on-chain matches what you expect."
-      ],
       "accounts": [
         {
           "name": "distributor",
@@ -42,6 +22,11 @@
               {
                 "kind": "account",
                 "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
                 "account": "Mint",
                 "path": "mint"
               },
@@ -52,6 +37,14 @@
               }
             ]
           }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
         },
         {
           "name": "clawbackReceiver",
@@ -71,10 +64,11 @@
         },
         {
           "name": "tokenVault",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false,
           "docs": [
-            "Token vault"
+            "Token vault",
+            "Should create previously"
           ]
         },
         {
@@ -144,6 +138,281 @@
         {
           "name": "clawbackStartTs",
           "type": "i64"
+        },
+        {
+          "name": "enableSlot",
+          "type": "u64"
+        },
+        {
+          "name": "closable",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "newDistributor2",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "MerkleDistributor"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "type": "u64",
+                "path": "version"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
+        },
+        {
+          "name": "clawbackReceiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Clawback receiver token account"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "tokenVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token vault",
+            "Should create previously"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
+            "Also has the authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Associated Token] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u64"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "totalClaim",
+          "type": "u64"
+        },
+        {
+          "name": "maxNumNodes",
+          "type": "u64"
+        },
+        {
+          "name": "startVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "endVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "clawbackStartTs",
+          "type": "i64"
+        },
+        {
+          "name": "enableSlot",
+          "type": "u64"
+        },
+        {
+          "name": "closable",
+          "type": "bool"
+        },
+        {
+          "name": "totalBonus",
+          "type": "u64"
+        },
+        {
+          "name": "bonusVestingSlotDuration",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "closeDistributor",
+      "docs": [
+        "only available in test phase"
+      ],
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "relations": [
+            "admin",
+            "token_vault"
+          ]
+        },
+        {
+          "name": "tokenVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Clawback receiver token account"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
+            "Also has the authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "destinationTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "account receive token back"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeClaimStatus",
+      "docs": [
+        "only available in test phase"
+      ],
+      "accounts": [
+        {
+          "name": "claimStatus",
+          "isMut": true,
+          "isSigner": false,
+          "relations": [
+            "claimant",
+            "admin"
+          ]
+        },
+        {
+          "name": "claimant",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setEnableSlot",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer to create the distributor."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "enableSlot",
+          "type": "u64"
         }
       ]
     },
@@ -476,6 +745,20 @@
               "Unlocked amount"
             ],
             "type": "u64"
+          },
+          {
+            "name": "closable",
+            "docs": [
+              "indicate that whether admin can close this account, for testing purpose"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "admin of merkle tree, store for for testing purpose"
+            ],
+            "type": "publicKey"
           }
         ]
       }
@@ -518,6 +801,13 @@
             "name": "mint",
             "docs": [
               "[Mint] of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "base key of distributor."
             ],
             "type": "publicKey"
           },
@@ -597,6 +887,93 @@
               "Whether or not the distributor has been clawed back"
             ],
             "type": "bool"
+          },
+          {
+            "name": "enableSlot",
+            "docs": [
+              "this merkle tree is enable from this slot"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "closable",
+            "docs": [
+              "indicate that whether admin can close this pool, for testing purpose"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "airdropBonus",
+            "docs": [
+              "bonus multiplier"
+            ],
+            "type": {
+              "defined": "AirdropBonus"
+            }
+          },
+          {
+            "name": "buffer0",
+            "docs": [
+              "Buffer 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "buffer1",
+            "docs": [
+              "Buffer 1"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "buffer2",
+            "docs": [
+              "Buffer 2"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "AirdropBonus",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "vestingSlotDuration",
+            "type": "u64"
+          },
+          {
+            "name": "totalClaimedBonus",
+            "docs": [
+              "total bonus"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -724,6 +1101,21 @@
       "code": 6017,
       "name": "InvalidVersion",
       "msg": "Airdrop Version Mismatch"
+    },
+    {
+      "code": 6018,
+      "name": "ClaimingIsNotStarted",
+      "msg": "Claiming is not started"
+    },
+    {
+      "code": 6019,
+      "name": "CannotCloseDistributor",
+      "msg": "Cannot close distributor"
+    },
+    {
+      "code": 6020,
+      "name": "CannotCloseClaimStatus",
+      "msg": "Cannot close claim status"
     }
   ]
 }
