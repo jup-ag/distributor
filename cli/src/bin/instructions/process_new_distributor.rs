@@ -35,12 +35,21 @@ pub fn process_new_distributor_with_bonus(
 ) {
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
+    let average_slot_time = get_average_slot_time(&client).unwrap();
+    let bonus_vesting_slot_duration = new_distributor_args
+        .bonus_vesting_duration
+        .checked_mul(1000)
+        .unwrap()
+        .checked_div(average_slot_time)
+        .unwrap();
+
     for i in (1..10).rev() {
         match create_new_distributor(
             args,
             &new_distributor_args.to_new_distributor_args(),
             0,
-            new_distributor_args.bonus_vesting_duration,
+            bonus_vesting_slot_duration,
         ) {
             Ok(_) => {
                 println!("Done create all distributors");
@@ -57,7 +66,7 @@ pub fn process_new_distributor_with_bonus(
                         args,
                         &new_distributor_args.to_new_distributor_args(),
                         new_distributor_args.bonus_multiplier,
-                        new_distributor_args.bonus_vesting_duration,
+                        bonus_vesting_slot_duration,
                     )
                     .expect("Failed to create distributors");
                 }
@@ -70,7 +79,7 @@ fn create_new_distributor(
     args: &Args,
     new_distributor_args: &NewDistributorArgs,
     bonus_multiplier: u64,
-    bonus_vesting_duration: u64,
+    bonus_vesting_slot_duration: u64,
 ) -> Result<()> {
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
@@ -118,7 +127,7 @@ fn create_new_distributor(
                 &merkle_tree,
                 new_distributor_args,
                 total_bonus,
-                bonus_vesting_duration,
+                bonus_vesting_slot_duration,
                 keypair.pubkey(),
                 base.pubkey(),
                 &args,
@@ -219,7 +228,7 @@ fn create_new_distributor(
                     enable_slot: new_distributor_args.enable_slot,
                     closable: new_distributor_args.closable,
                     total_bonus,
-                    bonus_vesting_slot_duration: bonus_vesting_duration,
+                    bonus_vesting_slot_duration,
                 }
                 .data(),
             });
@@ -276,7 +285,7 @@ fn create_new_distributor(
                   &merkle_tree,
                   new_distributor_args,
                   total_bonus,
-                  bonus_vesting_duration,
+                  bonus_vesting_slot_duration,
                   keypair.pubkey(),
                   base.pubkey(),
                   args,
