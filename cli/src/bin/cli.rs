@@ -619,7 +619,7 @@ fn check_distributor_onchain_matches(
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
     total_bonus: u64,
-    bonus_vesting_duration: u64,
+    bonus_vesting_slot_duration: u64,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -667,7 +667,7 @@ fn check_distributor_onchain_matches(
             return Err("total_bonus mismatch");
         }
 
-        if distributor.airdrop_bonus.vesting_slot_duration != bonus_vesting_duration {
+        if distributor.airdrop_bonus.vesting_slot_duration != bonus_vesting_slot_duration {
             return Err("bonus_vesting_duration mismatch");
         }
 

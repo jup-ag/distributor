@@ -48,7 +48,7 @@ pub fn process_new_distributor_with_bonus(
         match create_new_distributor(
             args,
             &new_distributor_args.to_new_distributor_args(),
-            0,
+            new_distributor_args.bonus_multiplier,
             bonus_vesting_slot_duration,
         ) {
             Ok(_) => {
