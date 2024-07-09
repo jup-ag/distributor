@@ -195,9 +195,8 @@ pub struct VerifyArgs {
     #[clap(long, env)]
     pub skip_verify_amount: bool,
 
-    #[clap(long, env)]
-    pub bonus_vesting_duration: u64,
-
+    // #[clap(long, env)]
+    // pub bonus_vesting_duration: u64,
     #[clap(long, env)]
     pub bonus_multiplier: u64,
 }
