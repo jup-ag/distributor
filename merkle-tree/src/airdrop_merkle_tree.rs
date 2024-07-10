@@ -13,10 +13,10 @@ use solana_program::{hash::hashv, pubkey::Pubkey};
 
 use crate::{
     csv_entry::CsvEntry,
-    error::{MerkleTreeError, MerkleTreeError::MerkleValidationError},
+    error::MerkleTreeError::{self, MerkleValidationError},
     merkle_tree::MerkleTree,
     tree_node::TreeNode,
-    utils::{get_max_total_claim, get_proof},
+    utils::{get_proof, get_total_locked_amount, get_total_unlocked_amount},
 };
 
 // proof struct
@@ -45,13 +45,19 @@ pub struct AirdropMerkleTree {
     pub merkle_root: [u8; 32],
     pub airdrop_version: u64,
     pub max_num_nodes: u64,
-    pub max_total_claim: u64,
+    pub total_unlocked_amount: u64,
+    pub total_locked_amount: u64,
     pub tree_nodes: Vec<TreeNode>,
 }
 
 pub type Result<T> = result::Result<T, MerkleTreeError>;
 
 impl AirdropMerkleTree {
+    pub fn get_max_total_claim(&self) -> u64 {
+        self.total_unlocked_amount
+            .checked_add(self.total_locked_amount)
+            .unwrap()
+    }
     pub fn new(tree_nodes: Vec<TreeNode>, airdrop_version: u64) -> Result<Self> {
         // Combine tree nodes with the same claimant, while retaining original order
         let mut tree_nodes_map: IndexMap<Pubkey, TreeNode> = IndexMap::new();
@@ -62,6 +68,10 @@ impl AirdropMerkleTree {
                 .and_modify(|n| {
                     println!("duplicate claimant {} found, combining", n.claimant);
                     n.amount = n.amount.checked_add(tree_node.amount).unwrap();
+                    n.locked_amount = n
+                        .locked_amount
+                        .checked_add(tree_node.locked_amount)
+                        .unwrap();
                 })
                 .or_insert_with(|| tree_node); // If not exists, insert a new entry
         }
@@ -80,7 +90,8 @@ impl AirdropMerkleTree {
             tree_node.proof = Some(get_proof(&tree, i));
         }
 
-        let max_total_claim = get_max_total_claim(tree_nodes.as_ref());
+        let total_unlocked_amount = get_total_unlocked_amount(tree_nodes.as_ref());
+        let total_locked_amount = get_total_locked_amount(tree_nodes.as_ref());
         let tree = AirdropMerkleTree {
             merkle_root: tree
                 .get_root()
@@ -88,13 +99,14 @@ impl AirdropMerkleTree {
                 .to_bytes(),
             airdrop_version,
             max_num_nodes: tree_nodes.len() as u64,
-            max_total_claim,
+            total_unlocked_amount,
+            total_locked_amount,
             tree_nodes,
         };
 
         println!(
-            "created merkle tree version {} with {} nodes and max total claim of {}",
-            airdrop_version, tree.max_num_nodes, tree.max_total_claim
+            "created merkle tree version {} with {} nodes and total_unlocked_amount {} total_locked_amount {}",
+            airdrop_version, tree.max_num_nodes, tree.total_unlocked_amount, tree.total_locked_amount
         );
         tree.validate()?;
         Ok(tree)
@@ -177,13 +189,21 @@ impl AirdropMerkleTree {
             ));
         }
 
-        // validate that sum is equal to max_total_claim
-        let sum = get_max_total_claim(&self.tree_nodes);
-
-        if sum != self.max_total_claim {
+        // validate total_unlocked_amount
+        let total_unlocked_amount = get_total_unlocked_amount(&self.tree_nodes);
+        if total_unlocked_amount != self.total_unlocked_amount {
             return Err(MerkleValidationError(format!(
-                "Tree nodes sum {} does not match max_total_claim {}",
-                sum, self.max_total_claim
+                "Tree nodes total_unlocked_amount {} does not match {}",
+                total_unlocked_amount, self.total_unlocked_amount
+            )));
+        }
+
+        // validate total_unlocked_amount
+        let total_locked_amount = get_total_locked_amount(&self.tree_nodes);
+        if total_locked_amount != self.total_locked_amount {
+            return Err(MerkleValidationError(format!(
+                "Tree nodes total_locked_amount {} does not match {}",
+                total_locked_amount, self.total_locked_amount
             )));
         }
 
@@ -362,6 +382,6 @@ mod tests {
         let tree = AirdropMerkleTree::new(tree_nodes, 0).unwrap();
         assert_eq!(tree.tree_nodes.len(), 2);
         assert_eq!(tree.tree_nodes[0].amount, 11);
-        assert_eq!(tree.tree_nodes[0].locked_amount, 10);
+        assert_eq!(tree.tree_nodes[0].locked_amount, 20);
     }
 }

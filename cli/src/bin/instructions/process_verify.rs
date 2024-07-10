@@ -31,7 +31,7 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
 
         let total_bonus = verfify_args
             .bonus_multiplier
-            .checked_mul(merkle_tree.max_total_claim)
+            .checked_mul(merkle_tree.total_unlocked_amount)
             .unwrap();
 
         println!(
@@ -45,7 +45,7 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
             assert_eq!(
                 token_vault_account.amount,
                 merkle_tree
-                    .max_total_claim
+                    .get_max_total_claim()
                     .checked_add(total_bonus)
                     .unwrap()
             );
