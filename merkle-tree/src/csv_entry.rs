@@ -13,6 +13,8 @@ pub struct CsvEntry {
     pub pubkey: String,
     /// amount unlocked, (ui amount)
     pub amount: String,
+    /// amount locked, (ui amount)
+    pub locked_amount: String,
 }
 
 impl CsvEntry {
@@ -46,5 +48,6 @@ mod tests {
             "4SX6nqv5VRLMoNfYM5phvHgcBNcBEwUEES4qPPjf1EqS"
         );
         assert_eq!(entries[0].amount, "1000");
+        assert_eq!(entries[0].locked_amount, "10");
     }
 }

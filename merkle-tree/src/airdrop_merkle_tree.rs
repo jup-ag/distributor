@@ -22,9 +22,13 @@ use crate::{
 // proof struct
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserProof {
-    // merkle tree that user belongs
+    /// merkle tree that user belongs
     pub merkle_tree: String,
+    /// unlocked amount
     pub amount: u64,
+    /// locked amount
+    pub locked_amount: u64,
+    /// proof
     pub proof: Vec<[u8; 32]>,
 }
 
@@ -267,13 +271,8 @@ mod tests {
             tree_nodes.push(TreeNode {
                 claimant: new_test_key(),
                 amount: rand_balance(),
+                locked_amount: rand_balance(),
                 proof: None,
-                // total_unlocked_staker: rand_balance(),
-                // total_locked_staker: rand_balance(),
-                // total_unlocked_searcher: rand_balance(),
-                // total_locked_searcher: rand_balance(),
-                // total_unlocked_validator: rand_balance(),
-                // total_locked_validator: rand_balance(),
             });
         }
 
@@ -287,6 +286,7 @@ mod tests {
         let tree_nodes = vec![TreeNode {
             claimant: Pubkey::default(),
             amount: 2,
+            locked_amount: 0,
             proof: None,
         }];
         let merkle_tree = AirdropMerkleTree::new(tree_nodes, 0).unwrap();
@@ -300,16 +300,19 @@ mod tests {
             TreeNode {
                 claimant: pubkey!("FLYqJsmJ5AGMxMxK3Qy1rSen4ES2dqqo6h51W3C1tYS"),
                 amount: (100 * u64::pow(10, 9)),
+                locked_amount: 0,
                 proof: None,
             },
             TreeNode {
                 claimant: pubkey!("EDGARWktv3nDxRYjufjdbZmryqGXceaFPoPpbUzdpqED"),
                 amount: (100 * u64::pow(10, 9)),
+                locked_amount: 0,
                 proof: None,
             },
             TreeNode {
                 claimant: pubkey!("EDGARWktv3nDxRYjufjdbZmryqGXceaFPoPpbUzdpqEH"),
                 amount: (100 * u64::pow(10, 9)),
+                locked_amount: 1,
                 proof: None,
             },
         ];
@@ -339,16 +342,19 @@ mod tests {
             TreeNode {
                 claimant: duplicate_pubkey,
                 amount: 10,
+                locked_amount: 10,
                 proof: None,
             },
             TreeNode {
                 claimant: duplicate_pubkey,
                 amount: 1,
+                locked_amount: 10,
                 proof: None,
             },
             TreeNode {
                 claimant: Pubkey::new_unique(),
                 amount: 0,
+                locked_amount: 10,
                 proof: None,
             },
         ];
@@ -356,5 +362,6 @@ mod tests {
         let tree = AirdropMerkleTree::new(tree_nodes, 0).unwrap();
         assert_eq!(tree.tree_nodes.len(), 2);
         assert_eq!(tree.tree_nodes[0].amount, 11);
+        assert_eq!(tree.tree_nodes[0].locked_amount, 10);
     }
 }

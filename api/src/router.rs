@@ -18,7 +18,7 @@ use http::Request;
 use jito_merkle_tree::{airdrop_merkle_tree::UserProof, tree_node::TreeNode};
 use serde_derive::{Deserialize, Serialize};
 use solana_program::pubkey::Pubkey;
-use solana_rpc_client::nonblocking::rpc_client::RpcClient;
+
 use tower::{
     buffer::BufferLayer, limit::RateLimitLayer, load_shed::LoadShedLayer, timeout::TimeoutLayer,
     ServiceBuilder,
@@ -89,7 +89,8 @@ async fn get_user_info(
 
     let proof = UserProof {
         merkle_tree: node.0.to_string(),
-        amount: node.1.amount(),
+        amount: node.1.unlocked_amount(),
+        locked_amount: node.1.locked_amount(),
         proof: node
             .1
             .proof
@@ -127,7 +128,7 @@ async fn root() -> impl IntoResponse {
 // #[cfg(test)]
 // mod router_test {
 //     use std::{collections::HashMap, time, time::Instant};
-
+// use solana_rpc_client::nonblocking::rpc_client::RpcClient;
 //     use futures::future::join_all;
 //     use hyper::{Body, Client, Method, Request};
 //     use hyper_tls::HttpsConnector;

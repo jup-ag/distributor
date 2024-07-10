@@ -9,9 +9,11 @@ use crate::{
     state::merkle_distributor::{AirdropBonus, MerkleDistributor},
 };
 
-const SECONDS_PER_HOUR: i64 = 3600; // 60 minutes * 60 seconds
-const HOURS_PER_DAY: i64 = 24;
-const SECONDS_PER_DAY: i64 = SECONDS_PER_HOUR * HOURS_PER_DAY; // 24 hours * 3600 seconds
+#[cfg(feature = "localnet")]
+const SECONDS_PER_DAY: i64 = 0;
+
+#[cfg(not(feature = "localnet"))]
+const SECONDS_PER_DAY: i64 = 24 * 3600; // 24 hours * 3600 seconds
 
 /// Accounts for [merkle_distributor::handle_new_distributor].
 #[derive(Accounts)]

@@ -269,9 +269,9 @@ fn create_new_distributor(
                         tx.get_signature(),
                     );
                 }
-                Err(_e) => {
+                Err(e) => {
                     is_error = true;
-                    // println!("Failed to create MerkleDistributor: {:?}", e);
+                    println!("Failed to create MerkleDistributor: {:?}", e);
                 }
             }
 
