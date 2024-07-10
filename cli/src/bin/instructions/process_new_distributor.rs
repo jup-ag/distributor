@@ -97,7 +97,7 @@ fn create_new_distributor(
         let merkle_tree = AirdropMerkleTree::new_from_file(&single_tree_path).unwrap();
 
         let total_bonus = merkle_tree
-            .max_total_claim
+            .total_unlocked_amount
             .checked_mul(bonus_multiplier)
             .unwrap();
 
@@ -192,7 +192,7 @@ fn create_new_distributor(
                 data: merkle_distributor::instruction::NewDistributor {
                     version: merkle_tree.airdrop_version,
                     root: merkle_tree.merkle_root,
-                    max_total_claim: merkle_tree.max_total_claim,
+                    max_total_claim: merkle_tree.get_max_total_claim(),
                     max_num_nodes: merkle_tree.max_num_nodes,
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,
@@ -220,7 +220,7 @@ fn create_new_distributor(
                 data: merkle_distributor::instruction::NewDistributor2 {
                     version: merkle_tree.airdrop_version,
                     root: merkle_tree.merkle_root,
-                    total_claim: merkle_tree.max_total_claim,
+                    total_claim: merkle_tree.get_max_total_claim(),
                     max_num_nodes: merkle_tree.max_num_nodes,
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,

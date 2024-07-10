@@ -76,7 +76,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         );
 
         max_total_claim = max_total_claim
-            .checked_add(single_tree.max_total_claim)
+            .checked_add(single_tree.get_max_total_claim())
             .unwrap();
         max_num_nodes = max_num_nodes
             .checked_add(single_tree.max_num_nodes)
@@ -86,7 +86,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             // merkle_root: single_tree.merkle_root.clone(),
             airdrop_version: single_tree.airdrop_version,
             max_num_nodes: single_tree.max_num_nodes,
-            max_total_claim: single_tree.max_total_claim,
+            max_total_claim: single_tree.get_max_total_claim(),
         });
         for node in single_tree.tree_nodes.iter() {
             tree.insert(node.claimant, (distributor_pubkey, node.clone()));

@@ -17,11 +17,18 @@ pub fn get_proof(merkle_tree: &MerkleTree, index: usize) -> Vec<[u8; 32]> {
     proof
 }
 
-/// Given a set of tree nodes, get the max total claim amount. Panics on overflow
-pub fn get_max_total_claim(nodes: &[TreeNode]) -> u64 {
+/// Given a set of tree nodes, get the total unlocked amount. Panics on overflow
+pub fn get_total_unlocked_amount(nodes: &[TreeNode]) -> u64 {
     nodes
         .iter()
-        .try_fold(0, |acc: u64, n| acc.checked_add(n.total_amount()))
+        .try_fold(0, |acc: u64, n| acc.checked_add(n.amount))
+        .unwrap()
+}
+
+pub fn get_total_locked_amount(nodes: &[TreeNode]) -> u64 {
+    nodes
+        .iter()
+        .try_fold(0, |acc: u64, n| acc.checked_add(n.locked_amount))
         .unwrap()
 }
 
@@ -78,11 +85,14 @@ mod tests {
     #[test]
     fn test_get_max_total_claim_no_overflow() {
         let nodes = vec![
-            create_node(Pubkey::new_unique(), 100, 0),
-            create_node(Pubkey::new_unique(), 300, 0),
+            create_node(Pubkey::new_unique(), 100, 10),
+            create_node(Pubkey::new_unique(), 300, 20),
         ];
 
-        let total = get_max_total_claim(&nodes);
-        assert_eq!(total, 400); // 100 + 300
+        let total_unlocked_amount = get_total_unlocked_amount(&nodes);
+        assert_eq!(total_unlocked_amount, 400); // 100 + 300
+
+        let total_locked_amount = get_total_locked_amount(&nodes);
+        assert_eq!(total_locked_amount, 30); // 10 + 20
     }
 }

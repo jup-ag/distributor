@@ -634,7 +634,7 @@ fn check_distributor_onchain_matches(
 
         if distributor.max_total_claim
             != merkle_tree
-                .max_total_claim
+                .get_max_total_claim()
                 .checked_add(total_bonus)
                 .unwrap()
         {
