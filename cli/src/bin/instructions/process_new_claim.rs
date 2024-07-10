@@ -67,8 +67,8 @@ pub fn process_new_claim(args: &Args, claim_args: &ClaimArgs) {
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::NewClaim {
-            amount_unlocked: node.amount(),
-            amount_locked: 0,
+            amount_unlocked: node.unlocked_amount(),
+            amount_locked: node.locked_amount(),
             proof: node.proof.expect("proof not found"),
         }
         .data(),

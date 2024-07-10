@@ -8,6 +8,7 @@ use crate::*;
 pub struct KvProof {
     pub merkle_tree: String,
     pub amount: u64,
+    pub locked_amount: u64,
     /// Claimant's proof of inclusion in the Merkle Tree
     pub proof: Vec<[u8; 32]>,
 }
@@ -47,6 +48,7 @@ pub fn process_generate_kv_proof(args: &Args, generate_kv_proof_args: &GenerateK
                 KvProof {
                     merkle_tree: distributor_pubkey.to_string(),
                     amount: node.amount,
+                    locked_amount: node.locked_amount,
                     proof: node.proof.clone().unwrap(),
                 },
             );

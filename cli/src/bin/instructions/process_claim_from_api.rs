@@ -59,7 +59,7 @@ pub fn process_claim_from_api(args: &Args, claim_args: &ClaimFromApiArgs) {
         .to_account_metas(None),
         data: merkle_distributor::instruction::NewClaim {
             amount_unlocked: kv_proof.amount,
-            amount_locked: 0,
+            amount_locked: kv_proof.locked_amount,
             proof: kv_proof.proof,
         }
         .data(),
