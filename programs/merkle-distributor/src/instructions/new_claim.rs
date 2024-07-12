@@ -131,11 +131,11 @@ pub fn handle_new_claim(
     // Seed initial values
     claim_status.claimant = claimant_account.key();
     claim_status.locked_amount = amount_locked;
-    claim_status.unlocked_amount = amount_unlocked;
     claim_status.locked_amount_withdrawn = 0;
     claim_status.closable = distributor.closable;
     claim_status.admin = distributor.admin;
 
+    let unlocked_amount = amount_unlocked;
     let seeds = [
         b"MerkleDistributor".as_ref(),
         &distributor.base.to_bytes(),
@@ -144,8 +144,8 @@ pub fn handle_new_claim(
         &[ctx.accounts.distributor.bump],
     ];
 
-    let bonus = distributor.get_bonus_for_a_claimaint(claim_status.unlocked_amount, curr_slot)?;
-    let amount_with_bonus = claim_status.unlocked_amount.safe_add(bonus)?;
+    let bonus = distributor.get_bonus_for_a_claimaint(unlocked_amount, curr_slot)?;
+    claim_status.unlocked_amount = unlocked_amount.safe_add(bonus)?;
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -156,12 +156,12 @@ pub fn handle_new_claim(
             },
         )
         .with_signer(&[&seeds[..]]),
-        amount_with_bonus,
+        claim_status.unlocked_amount,
     )?;
     let distributor = &mut ctx.accounts.distributor;
     distributor.total_amount_claimed = distributor
         .total_amount_claimed
-        .checked_add(amount_with_bonus)
+        .checked_add(claim_status.unlocked_amount)
         .ok_or(ErrorCode::ArithmeticError)?;
 
     distributor.accumulate_bonus(bonus)?;
@@ -175,7 +175,7 @@ pub fn handle_new_claim(
     msg!(
         "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}",
         claim_status.locked_amount,
-        claim_status.unlocked_amount,
+        unlocked_amount,
         bonus,
         distributor.start_ts,
         distributor.end_ts,
