@@ -212,7 +212,9 @@ pub struct NewDistributorArgs {
 #[derive(Parser, Debug)]
 pub struct ClawbackArgs {
     #[clap(long, env)]
-    pub merkle_tree_path: PathBuf,
+    pub from_version: u64,
+    #[clap(long, env)]
+    pub to_version: u64,
 }
 
 #[derive(Parser, Debug)]
