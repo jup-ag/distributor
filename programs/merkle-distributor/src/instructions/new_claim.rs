@@ -90,14 +90,10 @@ pub fn handle_new_claim(
 ) -> Result<()> {
     let distributor = &mut ctx.accounts.distributor;
 
-    let curr_ts = Clock::get()?.unix_timestamp;
-    let curr_slot = Clock::get()?.slot;
-
     require!(!distributor.clawed_back, ErrorCode::ClaimExpired);
-    require!(
-        distributor.enable_slot <= curr_slot,
-        ErrorCode::ClaimingIsNotStarted
-    );
+
+    let activation_handler = distributor.get_activation_handler()?;
+    activation_handler.validate_claim()?;
 
     distributor.num_nodes_claimed = distributor
         .num_nodes_claimed
@@ -144,7 +140,7 @@ pub fn handle_new_claim(
         &[ctx.accounts.distributor.bump],
     ];
 
-    let bonus = distributor.get_bonus_for_a_claimaint(unlocked_amount, curr_slot)?;
+    let bonus = distributor.get_bonus_for_a_claimaint(unlocked_amount, &activation_handler)?;
     claim_status.unlocked_amount = unlocked_amount.safe_add(bonus)?;
     token::transfer(
         CpiContext::new(
@@ -183,7 +179,7 @@ pub fn handle_new_claim(
 
     emit!(NewClaimEvent {
         claimant: claimant_account.key(),
-        timestamp: curr_ts
+        timestamp: Clock::get()?.unix_timestamp
     });
 
     Ok(())

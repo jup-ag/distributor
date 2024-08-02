@@ -3,9 +3,9 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
 use crate::*;
 
-pub fn process_set_enable_slot_by_time(
+pub fn process_set_activation_slot_by_time(
     args: &Args,
-    set_enable_slot_by_time_args: &SetEnableSlotByTimeArgs,
+    set_enable_slot_by_time_args: &SetActivationSlotByTimeArgs,
 ) {
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
@@ -50,12 +50,15 @@ pub fn process_set_enable_slot_by_time(
         }
         ixs.push(Instruction {
             program_id: args.program_id,
-            accounts: merkle_distributor::accounts::SetEnableSlot {
+            accounts: merkle_distributor::accounts::SetActivationSlot {
                 distributor,
                 admin: keypair.pubkey(),
             }
             .to_account_metas(None),
-            data: merkle_distributor::instruction::SetEnableSlot { enable_slot: slot }.data(),
+            data: merkle_distributor::instruction::SetActivationSlot {
+                activation_slot: slot,
+            }
+            .data(),
         });
 
         let tx = Transaction::new_signed_with_payer(
@@ -91,12 +94,15 @@ pub fn process_set_enable_slot_by_time(
 
         let set_slot_ix = Instruction {
             program_id: args.program_id,
-            accounts: merkle_distributor::accounts::SetEnableSlot {
+            accounts: merkle_distributor::accounts::SetActivationSlot {
                 distributor,
                 admin: keypair.pubkey(),
             }
             .to_account_metas(None),
-            data: merkle_distributor::instruction::SetEnableSlot { enable_slot: slot }.data(),
+            data: merkle_distributor::instruction::SetActivationSlot {
+                activation_slot: slot,
+            }
+            .data(),
         };
 
         let tx = Transaction::new_signed_with_payer(

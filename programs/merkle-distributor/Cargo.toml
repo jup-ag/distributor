@@ -1,6 +1,6 @@
 [package]
 name = "merkle-distributor"
-version = "0.0.2"
+version = "0.1.0"
 description = "A Solana program for distributing tokens according to a Merkle root."
 edition = "2021"
 license = "GPL-3.0"
@@ -24,3 +24,4 @@ bytemuck = "1.14.0"
 jito-merkle-verify = { path = "../../verify" }
 solana-program = "1.16.16"
 solana-security-txt = "1.1.1"
+num_enum = "0.7.1"

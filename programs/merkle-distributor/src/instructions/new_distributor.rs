@@ -4,6 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
+use crate::state::merkle_distributor::ActivationType;
 use crate::{
     error::ErrorCode,
     state::merkle_distributor::{AirdropBonus, MerkleDistributor},
@@ -86,10 +87,11 @@ pub fn handle_new_distributor(
     start_vesting_ts: i64,
     end_vesting_ts: i64,
     clawback_start_ts: i64,
-    enable_slot: u64,
+    activation_time: u64,
+    activation_type: u8,
     closable: bool,
     total_bonus: u64,
-    bonus_vesting_slot_duration: u64,
+    bonus_vesting_duration: u64,
 ) -> Result<()> {
     let curr_ts = Clock::get()?.unix_timestamp;
 
@@ -134,18 +136,26 @@ pub fn handle_new_distributor(
     distributor.clawback_receiver = ctx.accounts.clawback_receiver.key();
     distributor.admin = ctx.accounts.admin.key();
     distributor.clawed_back = false;
-    distributor.enable_slot = enable_slot;
     distributor.closable = closable;
     distributor.base = ctx.accounts.base.key();
     distributor.airdrop_bonus = AirdropBonus {
         total_bonus,
-        vesting_slot_duration: bonus_vesting_slot_duration,
+        vesting_duration: bonus_vesting_duration,
         total_claimed_bonus: 0,
     };
 
+    match ActivationType::try_from(activation_type).map_err(|_| ErrorCode::InvalidActivationType)? {
+        ActivationType::Slot => {
+            distributor.activation_slot = activation_time;
+        }
+        ActivationType::Timestamp => {
+            distributor.activation_timestamp = activation_time;
+        }
+    }
+
     // Note: might get truncated, do not rely on
     msg! {
-        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} enable_slot {} total_bonus {}, bonus_vesting_slot_duration {}",
+        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} activation_time {} activation_type {} total_bonus {}, bonus_vesting_duration {}",
             distributor.version,
             distributor.mint,
             ctx.accounts.token_vault.key(),
@@ -155,9 +165,10 @@ pub fn handle_new_distributor(
             distributor.end_ts,
             distributor.clawback_start_ts,
             distributor.clawback_receiver,
-            distributor.enable_slot,
+            activation_time,
+            activation_type,
             distributor.airdrop_bonus.total_bonus,
-            distributor.airdrop_bonus.vesting_slot_duration,
+            distributor.airdrop_bonus.vesting_duration,
     };
 
     Ok(())

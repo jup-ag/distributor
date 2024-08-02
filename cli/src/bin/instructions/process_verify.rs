@@ -62,7 +62,21 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
         assert_eq!(merke_tree_state.closable, verfify_args.closable);
 
         assert_eq!(merke_tree_state.admin, verfify_args.admin);
-        assert_eq!(merke_tree_state.enable_slot, verfify_args.enable_slot);
+        assert_eq!(
+            merke_tree_state.activation_type,
+            verfify_args.activation_type
+        );
+        if verfify_args.activation_type == 0 {
+            assert_eq!(
+                merke_tree_state.activation_slot,
+                verfify_args.activation_time
+            );
+        } else {
+            assert_eq!(
+                merke_tree_state.activation_timestamp,
+                verfify_args.activation_time
+            );
+        }
 
         // assert_eq!(
         //     merke_tree_state.airdrop_bonus.vesting_slot_duration,

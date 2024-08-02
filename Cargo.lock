@@ -2437,12 +2437,13 @@ dependencies = [
 
 [[package]]
 name = "merkle-distributor"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
  "jito-merkle-verify",
+ "num_enum 0.7.1",
  "solana-program",
  "solana-security-txt",
 ]

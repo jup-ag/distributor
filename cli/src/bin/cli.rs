@@ -104,8 +104,9 @@ pub enum Commands {
     CreateMerkleTree(CreateMerkleTreeArgs),
     SetAdmin(SetAdminArgs),
 
-    SetEnableSlot(SetEnableSlotArgs),
-    SetEnableSlotByTime(SetEnableSlotByTimeArgs),
+    SetActivationSlot(SetActivationArgs),
+    SetActivationSlotByTime(SetActivationSlotByTimeArgs),
+    SetActivationTimestamp(SetActivationArgs),
 
     CreateTestList(CreateTestListArgs),
     CreateDummyCsv(CreateDummyCsv),
@@ -181,7 +182,10 @@ pub struct VerifyArgs {
     pub clawback_receiver_owner: Pubkey,
 
     #[clap(long, env)]
-    pub enable_slot: u64,
+    pub activation_time: u64,
+
+    #[clap(long, env)]
+    pub activation_type: u8,
 
     #[clap(long, env)]
     pub admin: Pubkey,
@@ -221,7 +225,10 @@ pub struct NewDistributorArgs {
     pub clawback_start_ts: i64,
 
     #[clap(long, env)]
-    pub enable_slot: u64,
+    pub activation_time: u64,
+
+    #[clap(long, env)]
+    pub activation_type: u8,
 
     #[clap(long, env)]
     pub airdrop_version: Option<u64>,
@@ -261,7 +268,10 @@ pub struct NewDistributorWithBonusArgs {
     pub clawback_start_ts: i64,
 
     #[clap(long, env)]
-    pub enable_slot: u64,
+    pub activation_time: u64,
+
+    #[clap(long, env)]
+    pub activation_type: u8,
 
     #[clap(long, env)]
     pub airdrop_version: Option<u64>,
@@ -294,7 +304,8 @@ impl NewDistributorWithBonusArgs {
             end_vesting_ts: self.end_vesting_ts,
             merkle_tree_path: self.merkle_tree_path.clone(),
             clawback_start_ts: self.clawback_start_ts,
-            enable_slot: self.enable_slot,
+            activation_time: self.activation_time,
+            activation_type: self.activation_type,
             airdrop_version: self.airdrop_version,
             closable: self.closable,
             skip_verify: self.skip_verify,
@@ -346,17 +357,17 @@ pub struct SetAdminArgs {
 }
 
 #[derive(Parser, Debug)]
-pub struct SetEnableSlotArgs {
+pub struct SetActivationArgs {
     #[clap(long, env)]
     pub from_version: u64,
     #[clap(long, env)]
     pub to_version: u64,
     #[clap(long, env)]
-    pub slot: u64,
+    pub time: u64, // can be timestamp or slot
 }
 
 #[derive(Parser, Debug)]
-pub struct SetEnableSlotByTimeArgs {
+pub struct SetActivationSlotByTimeArgs {
     /// Merkle tree out path
     #[clap(long, env)]
     pub merkle_tree_path: PathBuf,
@@ -557,11 +568,14 @@ fn main() {
         Commands::SetAdmin(set_admin_args) => {
             process_set_admin(&args, set_admin_args);
         }
-        Commands::SetEnableSlot(set_enable_slot_args) => {
-            process_set_enable_slot(&args, set_enable_slot_args);
+        Commands::SetActivationSlot(sub_args) => {
+            process_set_activation_slot(&args, sub_args);
         }
-        Commands::SetEnableSlotByTime(set_enable_slot_by_time_args) => {
-            process_set_enable_slot_by_time(&args, set_enable_slot_by_time_args);
+        Commands::SetActivationSlotByTime(sub_args) => {
+            process_set_activation_slot_by_time(&args, sub_args);
+        }
+        Commands::SetActivationTimestamp(sub_args) => {
+            process_set_activation_timestamp(&args, sub_args);
         }
         Commands::CreateDummyCsv(test_args) => {
             process_create_dummy_csv(test_args);
@@ -618,7 +632,7 @@ fn check_distributor_onchain_matches(
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
     total_bonus: u64,
-    bonus_vesting_slot_duration: u64,
+    bonus_vesting_duration: u64,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -654,8 +668,19 @@ fn check_distributor_onchain_matches(
             return Err("clawback_start_ts mismatch");
         }
 
-        if distributor.enable_slot != new_distributor_args.enable_slot {
-            return Err("enable_slot mismatch");
+        if distributor.activation_type != new_distributor_args.activation_type {
+            return Err("activation_type mismatch");
+        }
+
+        if new_distributor_args.activation_type == 0 {
+            if distributor.activation_slot != new_distributor_args.activation_time {
+                return Err("activation_slot mismatch");
+            }
+        }
+        if new_distributor_args.activation_type == 1 {
+            if distributor.activation_timestamp != new_distributor_args.activation_time {
+                return Err("activation_timestamp mismatch");
+            }
         }
 
         if distributor.closable != new_distributor_args.closable {
@@ -666,7 +691,7 @@ fn check_distributor_onchain_matches(
             return Err("total_bonus mismatch");
         }
 
-        if distributor.airdrop_bonus.vesting_slot_duration != bonus_vesting_slot_duration {
+        if distributor.airdrop_bonus.vesting_duration != bonus_vesting_duration {
             return Err("bonus_vesting_duration mismatch");
         }
 

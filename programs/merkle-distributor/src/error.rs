@@ -45,4 +45,6 @@ pub enum ErrorCode {
     CannotCloseDistributor,
     #[msg("Cannot close claim status")]
     CannotCloseClaimStatus,
+    #[msg("Invalid activation type")]
+    InvalidActivationType,
 }

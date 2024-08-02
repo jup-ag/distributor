@@ -14,6 +14,7 @@
 use anchor_lang::prelude::*;
 use instructions::*;
 
+// pub mod activation;
 pub mod error;
 pub mod instructions;
 pub mod math;
@@ -47,7 +48,8 @@ pub mod merkle_distributor {
         start_vesting_ts: i64,
         end_vesting_ts: i64,
         clawback_start_ts: i64,
-        enable_slot: u64,
+        activation_time: u64, // can be slot or timestamp
+        activation_type: u8,
         closable: bool,
     ) -> Result<()> {
         handle_new_distributor(
@@ -59,7 +61,8 @@ pub mod merkle_distributor {
             start_vesting_ts,
             end_vesting_ts,
             clawback_start_ts,
-            enable_slot,
+            activation_time,
+            activation_type,
             closable,
             0,
             0,
@@ -76,10 +79,11 @@ pub mod merkle_distributor {
         start_vesting_ts: i64,
         end_vesting_ts: i64,
         clawback_start_ts: i64,
-        enable_slot: u64,
+        activation_time: u64, // can be slot or timestamp
+        activation_type: u8,
         closable: bool,
         total_bonus: u64,
-        bonus_vesting_slot_duration: u64,
+        bonus_vesting_duration: u64,
     ) -> Result<()> {
         let max_total_claim = total_claim
             .checked_add(total_bonus)
@@ -93,10 +97,11 @@ pub mod merkle_distributor {
             start_vesting_ts,
             end_vesting_ts,
             clawback_start_ts,
-            enable_slot,
+            activation_time,
+            activation_type,
             closable,
             total_bonus,
-            bonus_vesting_slot_duration,
+            bonus_vesting_duration,
         )
     }
     /// only available in test phase
@@ -111,8 +116,19 @@ pub mod merkle_distributor {
     }
 
     #[allow(clippy::result_large_err)]
-    pub fn set_enable_slot(ctx: Context<SetEnableSlot>, enable_slot: u64) -> Result<()> {
-        handle_set_enable_slot(ctx, enable_slot)
+    pub fn set_activation_slot(
+        ctx: Context<SetActivationSlot>,
+        activation_slot: u64,
+    ) -> Result<()> {
+        handle_set_activation_slot(ctx, activation_slot)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn set_activation_timestamp(
+        ctx: Context<SetActivationTimestamp>,
+        activation_timestamp: u64,
+    ) -> Result<()> {
+        handle_set_activation_timestamp(ctx, activation_timestamp)
     }
 
     #[allow(clippy::result_large_err)]
