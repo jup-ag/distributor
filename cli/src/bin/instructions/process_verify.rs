@@ -66,17 +66,10 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
             merke_tree_state.activation_type,
             verfify_args.activation_type
         );
-        if verfify_args.activation_type == 0 {
-            assert_eq!(
-                merke_tree_state.activation_slot,
-                verfify_args.activation_time
-            );
-        } else {
-            assert_eq!(
-                merke_tree_state.activation_timestamp,
-                verfify_args.activation_time
-            );
-        }
+        assert_eq!(
+            merke_tree_state.activation_point,
+            verfify_args.activation_point
+        );
 
         // assert_eq!(
         //     merke_tree_state.airdrop_bonus.vesting_slot_duration,

@@ -50,16 +50,16 @@ pub struct MerkleDistributor {
     pub admin: Pubkey,
     /// Whether or not the distributor has been clawed back
     pub clawed_back: bool,
-    /// this merkle tree is activated from this slot
-    pub activation_slot: u64,
+    /// this merkle tree is activated from this slot or timestamp
+    pub activation_point: u64,
     /// indicate that whether admin can close this pool, for testing purpose
     pub closable: bool,
     /// bonus multiplier
     pub airdrop_bonus: AirdropBonus,
-    /// activation timstamp
-    pub activation_timestamp: u64,
     /// activation type, 0 means slot, 1 means timestamp
     pub activation_type: u8,
+    /// Buffer 0
+    pub buffer_0: [u8; 8],
     /// Buffer 1
     pub buffer_1: [u8; 31],
     /// Buffer 2
@@ -78,9 +78,9 @@ pub struct AirdropBonus {
 
 pub struct ActivationHandler {
     /// current slot or current timestamp
-    pub curr_time: u64,
+    pub curr_point: u64,
     /// activation slot or activation timestamp
-    pub activation_time: u64,
+    pub activation_point: u64,
     /// bonus multiplier
     pub airdrop_bonus: AirdropBonus,
 }
@@ -88,21 +88,21 @@ pub struct ActivationHandler {
 impl ActivationHandler {
     pub fn validate_claim(&self) -> Result<()> {
         require!(
-            self.activation_time <= self.curr_time,
+            self.activation_point <= self.curr_point,
             ErrorCode::ClaimingIsNotStarted
         );
         Ok(())
     }
     pub fn get_bonus_for_a_claimaint(&self, max_bonus: u64) -> Result<u64> {
-        let curr_time = self.curr_time;
-        let start_time = self.activation_time;
-        let end_time = self.airdrop_bonus.vesting_duration.safe_add(start_time)?;
+        let curr_point = self.curr_point;
+        let start_point = self.activation_point;
+        let end_point = self.airdrop_bonus.vesting_duration.safe_add(start_point)?;
 
-        if curr_time >= start_time {
-            if curr_time >= end_time {
+        if curr_point >= start_point {
+            if curr_point >= end_point {
                 Ok(max_bonus)
             } else {
-                let duration_into_unlock = curr_time.safe_sub(start_time)?;
+                let duration_into_unlock = curr_point.safe_sub(start_point)?;
                 let total_unlock_duration = self.airdrop_bonus.vesting_duration;
 
                 let amount = ((duration_into_unlock as u128).safe_mul(max_bonus as u128)?)
@@ -118,18 +118,15 @@ impl ActivationHandler {
 impl MerkleDistributor {
     pub fn get_activation_handler(&self) -> Result<ActivationHandler> {
         let activation_type = ActivationType::try_from(self.activation_type).unwrap();
-        match activation_type {
-            ActivationType::Slot => Ok(ActivationHandler {
-                curr_time: Clock::get()?.slot,
-                activation_time: self.activation_slot,
-                airdrop_bonus: self.airdrop_bonus,
-            }),
-            ActivationType::Timestamp => Ok(ActivationHandler {
-                curr_time: Clock::get()?.unix_timestamp as u64,
-                activation_time: self.activation_timestamp,
-                airdrop_bonus: self.airdrop_bonus,
-            }),
-        }
+        let curr_point = match activation_type {
+            ActivationType::Slot => Clock::get()?.slot,
+            ActivationType::Timestamp => Clock::get()?.unix_timestamp as u64,
+        };
+        Ok(ActivationHandler {
+            curr_point,
+            activation_point: self.activation_point,
+            airdrop_bonus: self.airdrop_bonus,
+        })
     }
     pub fn accumulate_bonus(&mut self, bonus: u64) -> Result<()> {
         self.airdrop_bonus.total_claimed_bonus =

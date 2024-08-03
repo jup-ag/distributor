@@ -2,7 +2,7 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
 use crate::*;
 
-pub fn process_set_activation_slot(args: &Args, set_activation_slot_args: &SetActivationArgs) {
+pub fn process_set_activation_point(args: &Args, set_activation_slot_args: &SetActivationArgs) {
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
 
@@ -17,7 +17,7 @@ pub fn process_set_activation_slot(args: &Args, set_activation_slot_args: &SetAc
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
-            if distributor_state.activation_slot == set_activation_slot_args.time {
+            if distributor_state.activation_point == set_activation_slot_args.activation_point {
                 println!("already set slot skip airdrop version {}", version);
                 break;
             }
@@ -32,13 +32,13 @@ pub fn process_set_activation_slot(args: &Args, set_activation_slot_args: &SetAc
 
             ixs.push(Instruction {
                 program_id: args.program_id,
-                accounts: merkle_distributor::accounts::SetActivationSlot {
+                accounts: merkle_distributor::accounts::SetActivationPoint {
                     distributor,
                     admin: keypair.pubkey(),
                 }
                 .to_account_metas(None),
-                data: merkle_distributor::instruction::SetActivationSlot {
-                    activation_slot: set_activation_slot_args.time,
+                data: merkle_distributor::instruction::SetActivationPoint {
+                    activation_point: set_activation_slot_args.activation_point,
                 }
                 .data(),
             });
@@ -53,8 +53,8 @@ pub fn process_set_activation_slot(args: &Args, set_activation_slot_args: &SetAc
             match client.send_and_confirm_transaction_with_spinner(&tx) {
                 Ok(signature) => {
                     println!(
-                        "Successfully set enable slot {} airdrop version {} ! signature: {signature:#?}",
-                        set_activation_slot_args.time, version
+                        "Successfully set activation_point {} airdrop version {} ! signature: {signature:#?}",
+                        set_activation_slot_args.activation_point, version
                     );
                     break;
                 }

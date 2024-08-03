@@ -48,7 +48,7 @@ pub mod merkle_distributor {
         start_vesting_ts: i64,
         end_vesting_ts: i64,
         clawback_start_ts: i64,
-        activation_time: u64, // can be slot or timestamp
+        activation_point: u64, // can be slot or timestamp
         activation_type: u8,
         closable: bool,
     ) -> Result<()> {
@@ -61,7 +61,7 @@ pub mod merkle_distributor {
             start_vesting_ts,
             end_vesting_ts,
             clawback_start_ts,
-            activation_time,
+            activation_point,
             activation_type,
             closable,
             0,
@@ -79,7 +79,7 @@ pub mod merkle_distributor {
         start_vesting_ts: i64,
         end_vesting_ts: i64,
         clawback_start_ts: i64,
-        activation_time: u64, // can be slot or timestamp
+        activation_point: u64, // can be slot or timestamp
         activation_type: u8,
         closable: bool,
         total_bonus: u64,
@@ -97,7 +97,7 @@ pub mod merkle_distributor {
             start_vesting_ts,
             end_vesting_ts,
             clawback_start_ts,
-            activation_time,
+            activation_point,
             activation_type,
             closable,
             total_bonus,
@@ -116,19 +116,11 @@ pub mod merkle_distributor {
     }
 
     #[allow(clippy::result_large_err)]
-    pub fn set_activation_slot(
-        ctx: Context<SetActivationSlot>,
-        activation_slot: u64,
+    pub fn set_activation_point(
+        ctx: Context<SetActivationPoint>,
+        activation_point: u64,
     ) -> Result<()> {
-        handle_set_activation_slot(ctx, activation_slot)
-    }
-
-    #[allow(clippy::result_large_err)]
-    pub fn set_activation_timestamp(
-        ctx: Context<SetActivationTimestamp>,
-        activation_timestamp: u64,
-    ) -> Result<()> {
-        handle_set_activation_timestamp(ctx, activation_timestamp)
+        handle_set_activation_point(ctx, activation_point)
     }
 
     #[allow(clippy::result_large_err)]

@@ -197,7 +197,7 @@ fn create_new_distributor(
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,
                     clawback_start_ts: new_distributor_args.clawback_start_ts,
-                    activation_time: new_distributor_args.activation_time,
+                    activation_point: new_distributor_args.activation_point,
                     activation_type: new_distributor_args.activation_type,
                     closable: new_distributor_args.closable,
                 }
@@ -226,7 +226,7 @@ fn create_new_distributor(
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,
                     clawback_start_ts: new_distributor_args.clawback_start_ts,
-                    activation_time: new_distributor_args.activation_time,
+                    activation_point: new_distributor_args.activation_point,
                     activation_type: new_distributor_args.activation_type,
                     closable: new_distributor_args.closable,
                     total_bonus,

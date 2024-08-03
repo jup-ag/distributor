@@ -87,7 +87,7 @@ pub fn handle_new_distributor(
     start_vesting_ts: i64,
     end_vesting_ts: i64,
     clawback_start_ts: i64,
-    activation_time: u64,
+    activation_point: u64,
     activation_type: u8,
     closable: bool,
     total_bonus: u64,
@@ -144,19 +144,13 @@ pub fn handle_new_distributor(
         total_claimed_bonus: 0,
     };
 
-    match ActivationType::try_from(activation_type).map_err(|_| ErrorCode::InvalidActivationType)? {
-        ActivationType::Slot => {
-            distributor.activation_slot = activation_time;
-        }
-        ActivationType::Timestamp => {
-            distributor.activation_timestamp = activation_time;
-        }
-    }
+    ActivationType::try_from(activation_type).map_err(|_| ErrorCode::InvalidActivationType)?;
+    distributor.activation_point = activation_point;
     distributor.activation_type = activation_type;
 
     // Note: might get truncated, do not rely on
     msg! {
-        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} activation_time {} activation_type {} total_bonus {}, bonus_vesting_duration {}",
+        "New distributor created with version = {}, mint={}, vault={} max_total_claim={}, max_nodes: {}, start_ts: {}, end_ts: {}, clawback_start: {}, clawback_receiver: {} activation_point {} activation_type {} total_bonus {}, bonus_vesting_duration {}",
             distributor.version,
             distributor.mint,
             ctx.accounts.token_vault.key(),
@@ -166,7 +160,7 @@ pub fn handle_new_distributor(
             distributor.end_ts,
             distributor.clawback_start_ts,
             distributor.clawback_receiver,
-            activation_time,
+            activation_point,
             activation_type,
             distributor.airdrop_bonus.total_bonus,
             distributor.airdrop_bonus.vesting_duration,

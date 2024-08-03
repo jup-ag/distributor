@@ -11,6 +11,7 @@ pub fn process_set_activation_slot_by_time(
         .expect("Failed reading keypair file");
 
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
+    let program_client = args.get_program_client();
 
     let mut paths: Vec<_> = fs::read_dir(&set_enable_slot_by_time_args.merkle_tree_path)
         .unwrap()
@@ -41,6 +42,12 @@ pub fn process_set_activation_slot_by_time(
         let (distributor, _bump) =
             get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, airdrop_version);
 
+        let distributor_state: MerkleDistributor = program_client.account(distributor).unwrap();
+        if distributor_state.activation_type != 0 {
+            println!("distributor {} is not activated by slot", distributor);
+            return;
+        }
+
         let mut ixs = vec![];
         // check priority fee
         if let Some(priority_fee) = args.priority_fee {
@@ -50,13 +57,13 @@ pub fn process_set_activation_slot_by_time(
         }
         ixs.push(Instruction {
             program_id: args.program_id,
-            accounts: merkle_distributor::accounts::SetActivationSlot {
+            accounts: merkle_distributor::accounts::SetActivationPoint {
                 distributor,
                 admin: keypair.pubkey(),
             }
             .to_account_metas(None),
-            data: merkle_distributor::instruction::SetActivationSlot {
-                activation_slot: slot,
+            data: merkle_distributor::instruction::SetActivationPoint {
+                activation_point: slot,
             }
             .data(),
         });
@@ -92,15 +99,24 @@ pub fn process_set_activation_slot_by_time(
             merkle_tree.airdrop_version,
         );
 
+        let distributor_state: MerkleDistributor = program_client.account(distributor).unwrap();
+        if distributor_state.activation_type != 0 {
+            println!(
+                "airdrop version {} is not activated by slot",
+                merkle_tree.airdrop_version
+            );
+            continue;
+        }
+
         let set_slot_ix = Instruction {
             program_id: args.program_id,
-            accounts: merkle_distributor::accounts::SetActivationSlot {
+            accounts: merkle_distributor::accounts::SetActivationPoint {
                 distributor,
                 admin: keypair.pubkey(),
             }
             .to_account_metas(None),
-            data: merkle_distributor::instruction::SetActivationSlot {
-                activation_slot: slot,
+            data: merkle_distributor::instruction::SetActivationPoint {
+                activation_point: slot,
             }
             .data(),
         };
@@ -117,7 +133,7 @@ pub fn process_set_activation_slot_by_time(
             .unwrap();
 
         println!(
-            "Successfully enable slot {slot} timestamp {} airdrop version {}! signature: {signature:#?}",
+            "Successfully activation slot {slot} timestamp {} airdrop version {}! signature: {signature:#?}",
             enable_time,
             merkle_tree.airdrop_version
         );

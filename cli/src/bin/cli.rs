@@ -104,9 +104,8 @@ pub enum Commands {
     CreateMerkleTree(CreateMerkleTreeArgs),
     SetAdmin(SetAdminArgs),
 
-    SetActivationSlot(SetActivationArgs),
+    SetActivationPoint(SetActivationArgs),
     SetActivationSlotByTime(SetActivationSlotByTimeArgs),
-    SetActivationTimestamp(SetActivationArgs),
 
     CreateTestList(CreateTestListArgs),
     CreateDummyCsv(CreateDummyCsv),
@@ -182,7 +181,7 @@ pub struct VerifyArgs {
     pub clawback_receiver_owner: Pubkey,
 
     #[clap(long, env)]
-    pub activation_time: u64,
+    pub activation_point: u64,
 
     #[clap(long, env)]
     pub activation_type: u8,
@@ -225,7 +224,7 @@ pub struct NewDistributorArgs {
     pub clawback_start_ts: i64,
 
     #[clap(long, env)]
-    pub activation_time: u64,
+    pub activation_point: u64,
 
     #[clap(long, env)]
     pub activation_type: u8,
@@ -268,7 +267,7 @@ pub struct NewDistributorWithBonusArgs {
     pub clawback_start_ts: i64,
 
     #[clap(long, env)]
-    pub activation_time: u64,
+    pub activation_point: u64,
 
     #[clap(long, env)]
     pub activation_type: u8,
@@ -304,7 +303,7 @@ impl NewDistributorWithBonusArgs {
             end_vesting_ts: self.end_vesting_ts,
             merkle_tree_path: self.merkle_tree_path.clone(),
             clawback_start_ts: self.clawback_start_ts,
-            activation_time: self.activation_time,
+            activation_point: self.activation_point,
             activation_type: self.activation_type,
             airdrop_version: self.airdrop_version,
             closable: self.closable,
@@ -363,7 +362,7 @@ pub struct SetActivationArgs {
     #[clap(long, env)]
     pub to_version: u64,
     #[clap(long, env)]
-    pub time: u64, // can be timestamp or slot
+    pub activation_point: u64, // can be timestamp or slot
 }
 
 #[derive(Parser, Debug)]
@@ -568,14 +567,11 @@ fn main() {
         Commands::SetAdmin(set_admin_args) => {
             process_set_admin(&args, set_admin_args);
         }
-        Commands::SetActivationSlot(sub_args) => {
-            process_set_activation_slot(&args, sub_args);
+        Commands::SetActivationPoint(sub_args) => {
+            process_set_activation_point(&args, sub_args);
         }
         Commands::SetActivationSlotByTime(sub_args) => {
             process_set_activation_slot_by_time(&args, sub_args);
-        }
-        Commands::SetActivationTimestamp(sub_args) => {
-            process_set_activation_timestamp(&args, sub_args);
         }
         Commands::CreateDummyCsv(test_args) => {
             process_create_dummy_csv(test_args);
@@ -671,16 +667,8 @@ fn check_distributor_onchain_matches(
         if distributor.activation_type != new_distributor_args.activation_type {
             return Err("activation_type mismatch");
         }
-
-        if new_distributor_args.activation_type == 0 {
-            if distributor.activation_slot != new_distributor_args.activation_time {
-                return Err("activation_slot mismatch");
-            }
-        }
-        if new_distributor_args.activation_type == 1 {
-            if distributor.activation_timestamp != new_distributor_args.activation_time {
-                return Err("activation_timestamp mismatch");
-            }
+        if distributor.activation_point != new_distributor_args.activation_point {
+            return Err("activation_slot mismatch");
         }
 
         if distributor.closable != new_distributor_args.closable {
