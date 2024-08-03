@@ -152,6 +152,7 @@ pub fn handle_new_distributor(
             distributor.activation_timestamp = activation_time;
         }
     }
+    distributor.activation_type = activation_type;
 
     // Note: might get truncated, do not rely on
     msg! {

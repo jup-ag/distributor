@@ -70,7 +70,7 @@ pub struct MerkleDistributor {
 pub struct AirdropBonus {
     /// total bonus
     pub total_bonus: u64,
-    // vesting slot duration
+    // vesting duration
     pub vesting_duration: u64,
     /// total bonus
     pub total_claimed_bonus: u64,
@@ -102,11 +102,11 @@ impl ActivationHandler {
             if curr_time >= end_time {
                 Ok(max_bonus)
             } else {
-                let slot_into_unlock = curr_time.safe_sub(start_time)?;
-                let total_unlock_slot = self.airdrop_bonus.vesting_duration;
+                let duration_into_unlock = curr_time.safe_sub(start_time)?;
+                let total_unlock_duration = self.airdrop_bonus.vesting_duration;
 
-                let amount = ((slot_into_unlock as u128).safe_mul(max_bonus as u128)?)
-                    .safe_div(total_unlock_slot as u128)? as u64;
+                let amount = ((duration_into_unlock as u128).safe_mul(max_bonus as u128)?)
+                    .safe_div(total_unlock_duration as u128)? as u64;
                 Ok(amount)
             }
         } else {
