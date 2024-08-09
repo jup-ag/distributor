@@ -59,9 +59,9 @@ pub struct MerkleDistributor {
     /// activation type, 0 means slot, 1 means timestamp
     pub activation_type: u8,
     /// Buffer 0
-    pub buffer_0: [u8; 8],
+    pub buffer_0: [u8; 7],
     /// Buffer 1
-    pub buffer_1: [u8; 31],
+    pub buffer_1: [u8; 32],
     /// Buffer 2
     pub buffer_2: [u8; 32],
 }
