@@ -79,7 +79,7 @@ fn create_new_distributor(
     args: &Args,
     new_distributor_args: &NewDistributorArgs,
     bonus_multiplier: u64,
-    bonus_vesting_slot_duration: u64,
+    bonus_vesting_duration: u64,
 ) -> Result<()> {
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
@@ -127,7 +127,7 @@ fn create_new_distributor(
                 &merkle_tree,
                 new_distributor_args,
                 total_bonus,
-                bonus_vesting_slot_duration,
+                bonus_vesting_duration,
                 keypair.pubkey(),
                 base.pubkey(),
                 &args,
@@ -197,7 +197,8 @@ fn create_new_distributor(
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,
                     clawback_start_ts: new_distributor_args.clawback_start_ts,
-                    enable_slot: new_distributor_args.enable_slot,
+                    activation_point: new_distributor_args.activation_point,
+                    activation_type: new_distributor_args.activation_type,
                     closable: new_distributor_args.closable,
                 }
                 .data(),
@@ -225,10 +226,11 @@ fn create_new_distributor(
                     start_vesting_ts: new_distributor_args.start_vesting_ts,
                     end_vesting_ts: new_distributor_args.end_vesting_ts,
                     clawback_start_ts: new_distributor_args.clawback_start_ts,
-                    enable_slot: new_distributor_args.enable_slot,
+                    activation_point: new_distributor_args.activation_point,
+                    activation_type: new_distributor_args.activation_type,
                     closable: new_distributor_args.closable,
                     total_bonus,
-                    bonus_vesting_slot_duration,
+                    bonus_vesting_duration,
                 }
                 .data(),
             });
@@ -285,7 +287,7 @@ fn create_new_distributor(
                   &merkle_tree,
                   new_distributor_args,
                   total_bonus,
-                  bonus_vesting_slot_duration,
+                  bonus_vesting_duration,
                   keypair.pubkey(),
                   base.pubkey(),
                   args,

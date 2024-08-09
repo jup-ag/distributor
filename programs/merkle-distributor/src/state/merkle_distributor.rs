@@ -1,8 +1,19 @@
+use crate::error::ErrorCode;
 use crate::math::safe_math::SafeMath;
 use anchor_lang::{
     account,
     prelude::{Pubkey, *},
 };
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+/// Type of the activation
+pub enum ActivationType {
+    Slot,
+    Timestamp,
+}
+
 /// State for the account which distributes tokens.
 #[account]
 #[derive(Default, Debug)]
@@ -39,14 +50,16 @@ pub struct MerkleDistributor {
     pub admin: Pubkey,
     /// Whether or not the distributor has been clawed back
     pub clawed_back: bool,
-    /// this merkle tree is enable from this slot
-    pub enable_slot: u64,
+    /// this merkle tree is activated from this slot or timestamp
+    pub activation_point: u64,
     /// indicate that whether admin can close this pool, for testing purpose
     pub closable: bool,
     /// bonus multiplier
     pub airdrop_bonus: AirdropBonus,
+    /// activation type, 0 means slot, 1 means timestamp
+    pub activation_type: u8,
     /// Buffer 0
-    pub buffer_0: [u8; 8],
+    pub buffer_0: [u8; 7],
     /// Buffer 1
     pub buffer_1: [u8; 32],
     /// Buffer 2
@@ -57,13 +70,64 @@ pub struct MerkleDistributor {
 pub struct AirdropBonus {
     /// total bonus
     pub total_bonus: u64,
-    // vesting slot duration
-    pub vesting_slot_duration: u64,
+    // vesting duration
+    pub vesting_duration: u64,
     /// total bonus
     pub total_claimed_bonus: u64,
 }
 
+pub struct ActivationHandler {
+    /// current slot or current timestamp
+    pub curr_point: u64,
+    /// activation slot or activation timestamp
+    pub activation_point: u64,
+    /// bonus multiplier
+    pub airdrop_bonus: AirdropBonus,
+}
+
+impl ActivationHandler {
+    pub fn validate_claim(&self) -> Result<()> {
+        require!(
+            self.activation_point <= self.curr_point,
+            ErrorCode::ClaimingIsNotStarted
+        );
+        Ok(())
+    }
+    pub fn get_bonus_for_a_claimaint(&self, max_bonus: u64) -> Result<u64> {
+        let curr_point = self.curr_point;
+        let start_point = self.activation_point;
+        let end_point = self.airdrop_bonus.vesting_duration.safe_add(start_point)?;
+
+        if curr_point >= start_point {
+            if curr_point >= end_point {
+                Ok(max_bonus)
+            } else {
+                let duration_into_unlock = curr_point.safe_sub(start_point)?;
+                let total_unlock_duration = self.airdrop_bonus.vesting_duration;
+
+                let amount = ((duration_into_unlock as u128).safe_mul(max_bonus as u128)?)
+                    .safe_div(total_unlock_duration as u128)? as u64;
+                Ok(amount)
+            }
+        } else {
+            Ok(0)
+        }
+    }
+}
+
 impl MerkleDistributor {
+    pub fn get_activation_handler(&self) -> Result<ActivationHandler> {
+        let activation_type = ActivationType::try_from(self.activation_type).unwrap();
+        let curr_point = match activation_type {
+            ActivationType::Slot => Clock::get()?.slot,
+            ActivationType::Timestamp => Clock::get()?.unix_timestamp as u64,
+        };
+        Ok(ActivationHandler {
+            curr_point,
+            activation_point: self.activation_point,
+            airdrop_bonus: self.airdrop_bonus,
+        })
+    }
     pub fn accumulate_bonus(&mut self, bonus: u64) -> Result<()> {
         self.airdrop_bonus.total_claimed_bonus =
             self.airdrop_bonus.total_claimed_bonus.safe_add(bonus)?;
@@ -79,29 +143,13 @@ impl MerkleDistributor {
             .safe_div(max_total_claim_without_bonus)? as u64;
         Ok(amount)
     }
-    pub fn get_bonus_for_a_claimaint(&self, unlocked_amount: u64, curr_slot: u64) -> Result<u64> {
+    pub fn get_bonus_for_a_claimaint(
+        &self,
+        unlocked_amount: u64,
+        activation_handler: &ActivationHandler,
+    ) -> Result<u64> {
         let max_bonus = self.get_max_bonus_for_a_claimant(unlocked_amount)?;
-
-        let start_slot = self.enable_slot;
-        let end_slot = self
-            .airdrop_bonus
-            .vesting_slot_duration
-            .safe_add(start_slot)?;
-
-        if curr_slot >= start_slot {
-            if curr_slot >= end_slot {
-                Ok(max_bonus)
-            } else {
-                let slot_into_unlock = curr_slot.safe_sub(start_slot)?;
-                let total_unlock_slot = self.airdrop_bonus.vesting_slot_duration;
-
-                let amount = ((slot_into_unlock as u128).safe_mul(max_bonus as u128)?)
-                    .safe_div(total_unlock_slot as u128)? as u64;
-                Ok(amount)
-            }
-        } else {
-            Ok(0)
-        }
+        activation_handler.get_bonus_for_a_claimaint(max_bonus)
     }
 }
 

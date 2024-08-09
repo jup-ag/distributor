@@ -2,22 +2,22 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
 use crate::*;
 
-pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlotArgs) {
+pub fn process_set_activation_point(args: &Args, set_activation_slot_args: &SetActivationArgs) {
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap())
         .expect("Failed reading keypair file");
 
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::confirmed());
     let program = args.get_program_client();
 
-    let from_version = set_enable_slot_args.from_version;
-    let to_version = set_enable_slot_args.to_version;
+    let from_version = set_activation_slot_args.from_version;
+    let to_version = set_activation_slot_args.to_version;
     for version in from_version..=to_version {
         let (distributor, _bump) =
             get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, version);
 
         loop {
             let distributor_state = program.account::<MerkleDistributor>(distributor).unwrap();
-            if distributor_state.enable_slot == set_enable_slot_args.slot {
+            if distributor_state.activation_point == set_activation_slot_args.activation_point {
                 println!("already set slot skip airdrop version {}", version);
                 break;
             }
@@ -32,13 +32,13 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
 
             ixs.push(Instruction {
                 program_id: args.program_id,
-                accounts: merkle_distributor::accounts::SetEnableSlot {
+                accounts: merkle_distributor::accounts::SetActivationPoint {
                     distributor,
                     admin: keypair.pubkey(),
                 }
                 .to_account_metas(None),
-                data: merkle_distributor::instruction::SetEnableSlot {
-                    enable_slot: set_enable_slot_args.slot,
+                data: merkle_distributor::instruction::SetActivationPoint {
+                    activation_point: set_activation_slot_args.activation_point,
                 }
                 .data(),
             });
@@ -53,8 +53,8 @@ pub fn process_set_enable_slot(args: &Args, set_enable_slot_args: &SetEnableSlot
             match client.send_and_confirm_transaction_with_spinner(&tx) {
                 Ok(signature) => {
                     println!(
-                        "Successfully set enable slot {} airdrop version {} ! signature: {signature:#?}",
-                        set_enable_slot_args.slot, version
+                        "Successfully set activation_point {} airdrop version {} ! signature: {signature:#?}",
+                        set_activation_slot_args.activation_point, version
                     );
                     break;
                 }

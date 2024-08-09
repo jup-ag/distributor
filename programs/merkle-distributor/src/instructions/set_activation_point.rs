@@ -1,10 +1,8 @@
-use anchor_lang::{context::Context, prelude::*, Accounts, Key, Result};
-
 use crate::state::merkle_distributor::MerkleDistributor;
-
-/// Accounts for [merkle_distributor::set_enable_slot].
+use anchor_lang::{context::Context, prelude::*, Accounts, Key, Result};
+/// Accounts for [merkle_distributor::set_activation_point].
 #[derive(Accounts)]
-pub struct SetEnableSlot<'info> {
+pub struct SetActivationPoint<'info> {
     /// [MerkleDistributor].
     #[account(
         mut,
@@ -17,10 +15,13 @@ pub struct SetEnableSlot<'info> {
     pub admin: Signer<'info>,
 }
 
-/// set enable slot
+/// set activation point
 #[allow(clippy::result_large_err)]
-pub fn handle_set_enable_slot(ctx: Context<SetEnableSlot>, enable_slot: u64) -> Result<()> {
+pub fn handle_set_activation_point(
+    ctx: Context<SetActivationPoint>,
+    activation_point: u64,
+) -> Result<()> {
     let distributor = &mut ctx.accounts.distributor;
-    distributor.enable_slot = enable_slot;
+    distributor.activation_point = activation_point;
     Ok(())
 }
