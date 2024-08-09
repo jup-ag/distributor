@@ -169,12 +169,14 @@ pub fn handle_new_claim(
 
     // Note: might get truncated, do not rely on
     msg!(
-        "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}",
+        "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}, activation_point {} current_point {}",
         claim_status.locked_amount,
         unlocked_amount,
         bonus,
         distributor.start_ts,
         distributor.end_ts,
+        activation_handler.activation_point,
+        activation_handler.curr_point,
     );
 
     emit!(NewClaimEvent {
