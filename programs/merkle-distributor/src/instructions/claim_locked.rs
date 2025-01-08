@@ -65,15 +65,7 @@ pub struct ClaimLocked<'info> {
     pub locker: Box<Account<'info, Locker>>,
 
     /// CHECK: escrow
-    #[account(mut,
-             seeds = [
-                 b"Escrow".as_ref(),
-                 locker.key().as_ref(),
-                 claimant.key().as_ref()
-             ],
-             seeds::program = voter_program.key(),
-             bump
-         )]
+    #[account(mut, has_one = locker)]
     pub escrow: Box<Account<'info, Escrow>>,
 
     /// CHECK: escrow_tokens
