@@ -1,11 +1,14 @@
 use anchor_lang::prelude::*;
 
 use crate::error::ErrorCode::ArithmeticError;
+use static_assertions::const_assert;
 
 /// Holds whether or not a claimant has claimed tokens.
 #[account]
-#[derive(Default)]
+#[derive(Default, InitSpace)]
 pub struct ClaimStatus {
+    /// distributor
+    pub distributor: Pubkey,
     /// Authority that claimed the tokens.
     pub claimant: Pubkey,
     /// Locked amount  
@@ -20,8 +23,10 @@ pub struct ClaimStatus {
     pub admin: Pubkey,
 }
 
+const_assert!(ClaimStatus::INIT_SPACE <= ClaimStatus::LEN);
+
 impl ClaimStatus {
-    pub const LEN: usize = 8 + std::mem::size_of::<ClaimStatus>();
+    pub const LEN: usize = 200;
 
     /// Returns amount withdrawable, factoring in unlocked tokens and previous withdraws.
     /// payout is difference between the amount unlocked and the amount withdrawn
@@ -72,3 +77,8 @@ impl ClaimStatus {
         }
     }
 }
+
+// #[test]
+// fn test_size() {
+//     println!("{} ", ClaimStatus::INIT_SPACE)
+// }

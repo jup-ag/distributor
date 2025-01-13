@@ -1,7 +1,3 @@
-# [toolchain]
-# anchor_version = "0.29.0"
-# solana_version = "1.16.9" # Solana version to use
-
 [features]
 seeds = true
 
@@ -15,19 +11,26 @@ members = [
 
 [provider]
 cluster = "Localnet"
-wallet = "~/.config/solana/id.json"
+wallet = "keys/localnet/admin-bossj3JvwiNK7pvjr149DqdtJxf2gdygbcmEPTkb2F1.json"
 
 [programs.mainnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
 
 [programs.devnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
 
 [programs.testnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
 
 [programs.localnet]
-merkle_distributor = "DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j"
+merkle_distributor = "DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R"
+
+[[test.genesis]]
+address = "voTpe3tHQ7AjQHMapgSue2HJFAh2cGsdokqN3XqmVSj"
+program = "./artifacts/locked_voter.so"
 
 [scripts]
-test = "yarn mocha"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/*.ts"
+
+[test]
+startup_wait = 30000

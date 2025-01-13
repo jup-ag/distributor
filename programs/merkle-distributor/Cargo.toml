@@ -25,3 +25,8 @@ jito-merkle-verify = { path = "../../verify" }
 solana-program = "1.16.16"
 solana-security-txt = "1.1.1"
 num_enum = "0.7.1"
+static_assertions = "1.1.0"
+locked-voter = { git = "https://github.com/TeamRaccoons/WAGMI", features = [
+    "cpi",
+    "no-entrypoint",
+], rev = "425ac5e3a51f15831c825874e531409d4dc12c71" }

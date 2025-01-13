@@ -69,8 +69,6 @@ pub struct Args {
 
 impl Args {
     fn get_program_client(&self) -> Program<Rc<Keypair>> {
-        // let payer =
-        //     read_keypair_file(self.keypair_path.clone()).expect("Wallet keypair file not found");
         let payer = Keypair::new();
         let client = AnchorClient::new_with_options(
             Cluster::Custom(self.rpc_url.clone(), self.rpc_url.clone()),
@@ -92,8 +90,6 @@ pub enum Commands {
     ClaimFromApi(ClaimFromApiArgs),
     /// Create a new instance of a merkle distributor
     NewDistributor(NewDistributorArgs),
-    /// Create a new instance of a merkle distributor
-    NewDistributorWithBonus(NewDistributorWithBonusArgs),
 
     CloseDistributor(CloseDistributorArgs),
     CloseClaimStatus(CloseClaimStatusArgs),
@@ -245,73 +241,21 @@ pub struct NewDistributorArgs {
     /// Clawback receiver owner
     #[clap(long, env)]
     pub clawback_receiver_owner: Pubkey,
-}
-
-// NewDistributor subcommand args
-#[derive(Parser, Debug)]
-pub struct NewDistributorWithBonusArgs {
-    /// Lockup timestamp start
-    #[clap(long, env)]
-    pub start_vesting_ts: i64,
-
-    /// Lockup timestamp end (unix timestamp)
-    #[clap(long, env)]
-    pub end_vesting_ts: i64,
-
-    /// Merkle distributor path
-    #[clap(long, env)]
-    pub merkle_tree_path: PathBuf,
-
-    /// When to make the clawback period start. Must be at least a day after the end_vesting_ts
-    #[clap(long, env)]
-    pub clawback_start_ts: i64,
-
-    #[clap(long, env)]
-    pub activation_point: u64,
-
-    #[clap(long, env)]
-    pub activation_type: u8,
-
-    #[clap(long, env)]
-    pub airdrop_version: Option<u64>,
-
-    #[clap(long, env)]
-    pub closable: bool,
-
-    #[clap(long, env)]
-    pub skip_verify: bool,
-
-    /// Base keypair
-    #[clap(long, env)]
-    pub base_path: String,
-
-    /// Clawback receiver owner
-    #[clap(long, env)]
-    pub clawback_receiver_owner: Pubkey,
 
     #[clap(long, env)]
     pub bonus_vesting_duration: u64,
 
     #[clap(long, env)]
     pub bonus_multiplier: u64,
-}
 
-impl NewDistributorWithBonusArgs {
-    pub fn to_new_distributor_args(&self) -> NewDistributorArgs {
-        NewDistributorArgs {
-            start_vesting_ts: self.start_vesting_ts,
-            end_vesting_ts: self.end_vesting_ts,
-            merkle_tree_path: self.merkle_tree_path.clone(),
-            clawback_start_ts: self.clawback_start_ts,
-            activation_point: self.activation_point,
-            activation_type: self.activation_type,
-            airdrop_version: self.airdrop_version,
-            closable: self.closable,
-            skip_verify: self.skip_verify,
-            base_path: self.base_path.clone(),
-            clawback_receiver_owner: self.clawback_receiver_owner,
-        }
-    }
+    #[clap(long, env)]
+    pub claim_type: u8,
+
+    #[clap(long, env)]
+    pub operator: Pubkey,
+
+    #[clap(long, env)]
+    pub locker: Pubkey,
 }
 
 #[derive(Parser, Debug)]
@@ -548,9 +492,6 @@ fn main() {
         Commands::NewDistributor(new_distributor_args) => {
             process_new_distributor(&args, new_distributor_args);
         }
-        Commands::NewDistributorWithBonus(new_distributor_with_bonus_args) => {
-            process_new_distributor_with_bonus(&args, new_distributor_with_bonus_args);
-        }
         Commands::CloseDistributor(close_distributor_args) => {
             process_close_distributor(&args, close_distributor_args);
         }
@@ -628,7 +569,6 @@ fn check_distributor_onchain_matches(
     merkle_tree: &AirdropMerkleTree,
     new_distributor_args: &NewDistributorArgs,
     total_bonus: u64,
-    bonus_vesting_duration: u64,
     pubkey: Pubkey,
     base: Pubkey,
     args: &Args,
@@ -671,7 +611,7 @@ fn check_distributor_onchain_matches(
             return Err("activation_slot mismatch");
         }
 
-        if distributor.closable != new_distributor_args.closable {
+        if distributor.closable() != new_distributor_args.closable {
             return Err("closable mismatch");
         }
 
@@ -679,8 +619,17 @@ fn check_distributor_onchain_matches(
             return Err("total_bonus mismatch");
         }
 
-        if distributor.airdrop_bonus.vesting_duration != bonus_vesting_duration {
+        if distributor.airdrop_bonus.vesting_duration != new_distributor_args.bonus_vesting_duration
+        {
             return Err("bonus_vesting_duration mismatch");
+        }
+
+        if distributor.operator != new_distributor_args.operator {
+            return Err("operator mismatch");
+        }
+
+        if distributor.locker != new_distributor_args.locker {
+            return Err("locker mismatch");
         }
 
         // TODO fix code

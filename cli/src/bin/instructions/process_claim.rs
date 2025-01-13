@@ -55,6 +55,7 @@ pub fn process_claim(args: &Args, claim_args: &ClaimArgs) {
             to: claimant_ata,
             claimant,
             token_program: token::ID,
+            operator: None,
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::ClaimLocked {}.data(),

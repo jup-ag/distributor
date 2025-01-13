@@ -5,6 +5,7 @@ use anchor_lang::{
     prelude::{Pubkey, *},
 };
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+use static_assertions::const_assert;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
@@ -14,14 +15,20 @@ pub enum ActivationType {
     Timestamp,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+/// Type of the activation
+pub enum ClaimType {
+    Permissionless,            // 0
+    Permissioned,              // 1, require double signing
+    PermissionlessWithStaking, // 2, claim and staking
+    PermissionedWithStaking,   // 3, require double signing
+}
+
 /// State for the account which distributes tokens.
-#[account]
-#[derive(Default, Debug)]
+#[account(zero_copy)]
+#[derive(Default, Debug, InitSpace)]
 pub struct MerkleDistributor {
-    /// Bump seed.
-    pub bump: u8,
-    /// Version of the airdrop
-    pub version: u64,
     /// The 256-bit merkle root.
     pub root: [u8; 32],
     /// [Mint] of the token to be distributed.
@@ -30,6 +37,16 @@ pub struct MerkleDistributor {
     pub base: Pubkey,
     /// Token Address of the vault
     pub token_vault: Pubkey,
+    /// Clawback receiver
+    pub clawback_receiver: Pubkey,
+    /// Admin wallet
+    pub admin: Pubkey,
+    /// locker, for claim type claim and stake
+    pub locker: Pubkey,
+    /// operator for signing in permissioned merkle tree
+    pub operator: Pubkey,
+    /// Version of the airdrop
+    pub version: u64,
     /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].
     pub max_total_claim: u64,
     /// Maximum number of nodes in [MerkleDistributor].
@@ -44,29 +61,26 @@ pub struct MerkleDistributor {
     pub end_ts: i64,
     /// Clawback start (Unix Timestamp)
     pub clawback_start_ts: i64,
-    /// Clawback receiver
-    pub clawback_receiver: Pubkey,
-    /// Admin wallet
-    pub admin: Pubkey,
-    /// Whether or not the distributor has been clawed back
-    pub clawed_back: bool,
     /// this merkle tree is activated from this slot or timestamp
     pub activation_point: u64,
-    /// indicate that whether admin can close this pool, for testing purpose
-    pub closable: bool,
-    /// bonus multiplier
-    pub airdrop_bonus: AirdropBonus,
     /// activation type, 0 means slot, 1 means timestamp
     pub activation_type: u8,
-    /// Buffer 0
-    pub buffer_0: [u8; 7],
-    /// Buffer 1
-    pub buffer_1: [u8; 32],
-    /// Buffer 2
-    pub buffer_2: [u8; 32],
+    /// claim type
+    pub claim_type: u8,
+    /// Bump seed.
+    pub bump: u8,
+    /// Whether or not the distributor has been clawed back
+    pub clawed_back: u8,
+    /// indicate that whether admin can close this pool, for testing purpose
+    pub closable: u8,
+    /// Padding 0
+    pub padding_0: [u8; 3],
+    // bonus multiplier
+    pub airdrop_bonus: AirdropBonus,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug, Default)]
+#[zero_copy]
+#[derive(Debug, Default, InitSpace)]
 pub struct AirdropBonus {
     /// total bonus
     pub total_bonus: u64,
@@ -151,8 +165,62 @@ impl MerkleDistributor {
         let max_bonus = self.get_max_bonus_for_a_claimant(unlocked_amount)?;
         activation_handler.get_bonus_for_a_claimaint(max_bonus)
     }
+    pub fn clawed_back(&self) -> bool {
+        self.clawed_back == 1
+    }
+    pub fn set_clawed_back(&mut self) {
+        self.clawed_back = 1;
+    }
+
+    pub fn closable(&self) -> bool {
+        self.closable == 1
+    }
+
+    pub fn validate_claim<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
+        // check operator
+        let claim_type =
+            ClaimType::try_from(self.claim_type).map_err(|_| ErrorCode::TypeCastedError)?;
+
+        require!(
+            claim_type == ClaimType::Permissionless || claim_type == ClaimType::Permissioned,
+            ErrorCode::InvalidClaimType
+        );
+
+        if claim_type == ClaimType::Permissioned {
+            // validate operator
+            let operator = operator.clone().unwrap();
+            require!(operator.key() == self.operator, ErrorCode::InvalidOperator);
+        }
+        Ok(())
+    }
+
+    pub fn validate_claim_and_stake<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
+        // check operator
+        let claim_type =
+            ClaimType::try_from(self.claim_type).map_err(|_| ErrorCode::TypeCastedError)?;
+
+        require!(
+            claim_type == ClaimType::PermissionlessWithStaking
+                || claim_type == ClaimType::PermissionedWithStaking,
+            ErrorCode::InvalidClaimType
+        );
+
+        if claim_type == ClaimType::PermissionedWithStaking {
+            // validate operator
+            let operator = operator.clone().unwrap();
+            require!(operator.key() == self.operator, ErrorCode::InvalidOperator);
+        }
+        Ok(())
+    }
 }
 
 impl MerkleDistributor {
-    pub const LEN: usize = 8 + std::mem::size_of::<MerkleDistributor>();
+    pub const LEN: usize = 460;
 }
+
+const_assert!(MerkleDistributor::INIT_SPACE <= MerkleDistributor::LEN);
+
+// #[test]
+// fn test_size() {
+//     println!("{} ", MerkleDistributor::INIT_SPACE)
+// }
