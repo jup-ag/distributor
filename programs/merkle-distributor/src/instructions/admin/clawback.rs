@@ -55,19 +55,10 @@ pub fn handle_clawback(ctx: Context<Clawback>) -> Result<()> {
 
     distributor.set_clawed_back();
 
-    let base = distributor.base;
-    let mint = distributor.mint;
-    let version = distributor.version;
-    let bump = distributor.bump;
+    let signer = distributor.signer();
     drop(distributor);
+    let seeds = signer.seeds();
 
-    let seeds = [
-        b"MerkleDistributor".as_ref(),
-        &base.to_bytes(),
-        &mint.to_bytes(),
-        &version.to_le_bytes(),
-        &[bump],
-    ];
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),

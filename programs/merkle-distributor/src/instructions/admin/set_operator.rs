@@ -10,16 +10,14 @@ use anchor_lang::{
 #[derive(Accounts)]
 pub struct SetOperator<'info> {
     /// The [MerkleDistributor].
-    #[account(mut, has_one=admin)]
+    #[account(mut, has_one = admin @ ErrorCode::Unauthorized)]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
 
     /// Admin signer
     pub admin: Signer<'info>,
 }
 
-/// Sets new clawback receiver token account
-/// CHECK:
-///     1. The new clawback receiver is not the same as the old one
+/// Sets new operator
 #[allow(clippy::result_large_err)]
 pub fn handle_set_operator(ctx: Context<SetOperator>, new_operator: Pubkey) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;

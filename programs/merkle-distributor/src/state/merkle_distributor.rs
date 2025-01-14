@@ -212,6 +212,15 @@ impl MerkleDistributor {
         }
         Ok(())
     }
+
+    pub fn signer(&self) -> MerkleDistributorSigner {
+        MerkleDistributorSigner {
+            base: self.base.to_bytes(),
+            mint: self.mint.to_bytes(),
+            version: self.version.to_le_bytes(),
+            bump: [self.bump],
+        }
+    }
 }
 
 impl MerkleDistributor {
@@ -219,6 +228,25 @@ impl MerkleDistributor {
 }
 
 const_assert!(MerkleDistributor::INIT_SPACE <= MerkleDistributor::LEN);
+
+pub struct MerkleDistributorSigner {
+    base: [u8; 32],
+    mint: [u8; 32],
+    version: [u8; 8],
+    bump: [u8; 1],
+}
+
+impl MerkleDistributorSigner {
+    pub fn seeds(&self) -> [&[u8]; 5] {
+        [
+            b"MerkleDistributor".as_ref(),
+            &self.base,
+            &self.mint,
+            &self.version,
+            &self.bump,
+        ]
+    }
+}
 
 // #[test]
 // fn test_size() {

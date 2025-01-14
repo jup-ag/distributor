@@ -9,10 +9,10 @@ pub struct CloseClaimStatus<'info> {
         mut,
         has_one = claimant,
         has_one = admin,
-        constraint = claim_status.closable @ ErrorCode::CannotCloseClaimStatus,
+        constraint = claim_status.load()?.closable() @ ErrorCode::CannotCloseClaimStatus,
         close = claimant,
     )]
-    pub claim_status: Account<'info, ClaimStatus>,
+    pub claim_status: AccountLoader<'info, ClaimStatus>,
 
     /// CHECK: claimant
     #[account(mut)]

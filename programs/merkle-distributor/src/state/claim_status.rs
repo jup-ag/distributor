@@ -4,9 +4,11 @@ use crate::error::ErrorCode::ArithmeticError;
 use static_assertions::const_assert;
 
 /// Holds whether or not a claimant has claimed tokens.
-#[account]
+#[account(zero_copy)]
 #[derive(Default, InitSpace)]
 pub struct ClaimStatus {
+    /// admin of merkle tree, store for for testing purpose
+    pub admin: Pubkey,
     /// distributor
     pub distributor: Pubkey,
     /// Authority that claimed the tokens.
@@ -20,9 +22,9 @@ pub struct ClaimStatus {
     /// Bonus amount
     pub bonus_amount: u64,
     /// indicate that whether admin can close this account, for testing purpose
-    pub closable: bool,
-    /// admin of merkle tree, store for for testing purpose
-    pub admin: Pubkey,
+    pub closable: u8,
+    /// padding
+    pub padding: [u8; 7],
 }
 
 const_assert!(ClaimStatus::INIT_SPACE <= ClaimStatus::LEN);
@@ -85,6 +87,10 @@ impl ClaimStatus {
             .checked_add(self.bonus_amount)
             .ok_or(ArithmeticError)?;
         Ok(amount)
+    }
+
+    pub fn closable(&self) -> bool {
+        self.closable == 1
     }
 }
 

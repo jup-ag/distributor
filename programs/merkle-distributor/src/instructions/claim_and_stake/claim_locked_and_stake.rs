@@ -30,7 +30,7 @@ pub struct ClaimLockedAndStake<'info> {
         has_one = distributor,
         has_one = claimant,
     )]
-    pub claim_status: Account<'info, ClaimStatus>,
+    pub claim_status: AccountLoader<'info, ClaimStatus>,
 
     /// Distributor ATA containing the tokens to distribute.
     #[account(
@@ -81,7 +81,8 @@ pub fn handle_claim_locked_and_stake(ctx: Context<ClaimLockedAndStake>) -> Resul
     // check operator
     distributor.authorize_claim_and_stake(&ctx.accounts.operator)?;
 
-    let claim_status = &mut ctx.accounts.claim_status;
+    let mut claim_status = ctx.accounts.claim_status.load_mut()?;
+
     let curr_ts = Clock::get()?.unix_timestamp;
 
     let escrow = &ctx.accounts.escrow;
@@ -133,19 +134,9 @@ pub fn handle_claim_locked_and_stake(ctx: Context<ClaimLockedAndStake>) -> Resul
         seconds_after_days,
     );
 
-    let base = distributor.base;
-    let mint = distributor.mint;
-    let version = distributor.version;
-    let bump = distributor.bump;
+    let signer = distributor.signer();
     drop(distributor);
-
-    let seeds = [
-        b"MerkleDistributor".as_ref(),
-        &base.to_bytes(),
-        &mint.to_bytes(),
-        &version.to_le_bytes(),
-        &[bump],
-    ];
+    let seeds = signer.seeds();
 
     let seeds = &[&seeds[..]];
 

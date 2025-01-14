@@ -36,19 +36,9 @@ pub struct CloseDistributor<'info> {
 #[allow(clippy::result_large_err)]
 pub fn handle_close_distributor(ctx: Context<CloseDistributor>) -> Result<()> {
     let distributor = ctx.accounts.distributor.load()?;
-    let base = distributor.base;
-    let mint = distributor.mint;
-    let version = distributor.version;
-    let bump = distributor.bump;
+    let signer = distributor.signer();
     drop(distributor);
-
-    let seeds = [
-        b"MerkleDistributor".as_ref(),
-        &base.to_bytes(),
-        &mint.to_bytes(),
-        &version.to_le_bytes(),
-        &[bump],
-    ];
+    let seeds = signer.seeds();
 
     token::transfer(
         CpiContext::new(

@@ -40,7 +40,7 @@ pub struct NewClaim<'info> {
         space = 8 + ClaimStatus::LEN,
         payer = claimant,
     )]
-    pub claim_status: Account<'info, ClaimStatus>,
+    pub claim_status: AccountLoader<'info, ClaimStatus>,
 
     /// Distributor ATA containing the tokens to distribute.
     #[account(
@@ -122,14 +122,14 @@ pub fn handle_new_claim(
         ErrorCode::InvalidProof
     );
 
-    let claim_status = &mut ctx.accounts.claim_status;
+    let mut claim_status = ctx.accounts.claim_status.load_init()?;
 
     // Seed initial values
     claim_status.distributor = ctx.accounts.distributor.key();
     claim_status.claimant = claimant_account.key();
     claim_status.locked_amount = amount_locked;
     claim_status.locked_amount_withdrawn = 0;
-    claim_status.closable = distributor.closable();
+    claim_status.closable = distributor.closable;
     claim_status.admin = distributor.admin;
 
     claim_status.unlocked_amount = amount_unlocked;
@@ -162,19 +162,9 @@ pub fn handle_new_claim(
         activation_handler.curr_point,
     );
 
-    let base = distributor.base;
-    let mint = distributor.mint;
-    let version = distributor.version;
-    let bump = distributor.bump;
+    let signer = distributor.signer();
     drop(distributor);
-
-    let seeds = [
-        b"MerkleDistributor".as_ref(),
-        &base.to_bytes(),
-        &mint.to_bytes(),
-        &version.to_le_bytes(),
-        &[bump],
-    ];
+    let seeds = signer.seeds();
 
     token::transfer(
         CpiContext::new(
