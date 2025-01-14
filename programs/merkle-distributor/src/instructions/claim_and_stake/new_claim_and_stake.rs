@@ -1,3 +1,11 @@
+use crate::LEAF_PREFIX;
+use crate::{
+    error::ErrorCode,
+    state::{
+        claim_status::ClaimStatus, claimed_event::NewClaimEvent,
+        merkle_distributor::MerkleDistributor,
+    },
+};
 use anchor_lang::{
     context::Context, prelude::*, solana_program::hash::hashv, system_program::System, Accounts,
     Key, Result,
@@ -5,22 +13,8 @@ use anchor_lang::{
 use anchor_spl::token::{Token, TokenAccount};
 use jito_merkle_verify::verify;
 
-use crate::{
-    error::ErrorCode,
-    math::SafeMath,
-    state::{
-        claim_status::ClaimStatus, claimed_event::NewClaimEvent,
-        merkle_distributor::MerkleDistributor,
-    },
-};
-
 use locked_voter::program::LockedVoter as Voter;
 use locked_voter::{self as voter, Escrow, Locker};
-
-// We need to discern between leaf and intermediate nodes to prevent trivial second
-// pre-image attacks.
-// https://flawed.net.nz/2018/02/21/attacking-merkle-trees-with-a-second-preimage-attack
-const LEAF_PREFIX: &[u8] = &[0];
 
 /// [merkle_distributor::new_claim_and_stake] accounts.
 #[derive(Accounts)]
@@ -100,8 +94,10 @@ pub fn handle_new_claim_and_stake(
 ) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;
 
+    require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
+
     // check operator
-    distributor.validate_claim_and_stake(&ctx.accounts.operator)?;
+    distributor.authorize_claim_and_stake(&ctx.accounts.operator)?;
 
     let escrow = &ctx.accounts.escrow;
     require!(escrow.is_max_lock, ErrorCode::EscrowIsNotMaxLock);
@@ -146,16 +142,17 @@ pub fn handle_new_claim_and_stake(
     claim_status.closable = distributor.closable();
     claim_status.admin = distributor.admin;
 
-    let bonus =
-        distributor.get_bonus_for_a_claimaint(claim_status.unlocked_amount, &activation_handler)?;
-    let amount_with_bonus = claim_status.unlocked_amount.safe_add(bonus)?;
+    claim_status.bonus_amount =
+        distributor.get_bonus_for_a_claimaint(amount_unlocked, &activation_handler)?;
+
+    let amount_with_bonus = claim_status.get_total_unlocked_amount()?;
 
     distributor.total_amount_claimed = distributor
         .total_amount_claimed
         .checked_add(amount_with_bonus)
         .ok_or(ErrorCode::ArithmeticError)?;
 
-    distributor.accumulate_bonus(bonus)?;
+    distributor.accumulate_bonus(claim_status.bonus_amount)?;
 
     require!(
         distributor.total_amount_claimed <= distributor.max_total_claim,
@@ -167,7 +164,7 @@ pub fn handle_new_claim_and_stake(
         "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}",
         claim_status.locked_amount,
         claim_status.unlocked_amount,
-        bonus,
+        claim_status.bonus_amount,
         distributor.start_ts,
         distributor.end_ts,
     );

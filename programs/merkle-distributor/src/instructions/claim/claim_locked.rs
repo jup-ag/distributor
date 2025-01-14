@@ -69,7 +69,7 @@ pub fn handle_claim_locked(ctx: Context<ClaimLocked>) -> Result<()> {
     require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
 
     // check operator
-    distributor.validate_claim(&ctx.accounts.operator)?;
+    distributor.authorize_claim(&ctx.accounts.operator)?;
 
     let activation_handler = distributor.get_activation_handler()?;
     activation_handler.validate_claim()?;

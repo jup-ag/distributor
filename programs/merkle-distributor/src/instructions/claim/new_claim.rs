@@ -10,7 +10,6 @@ use jito_merkle_verify::verify;
 
 use crate::{
     error::ErrorCode,
-    math::SafeMath,
     state::{
         claim_status::ClaimStatus, claimed_event::NewClaimEvent,
         merkle_distributor::MerkleDistributor,
@@ -20,7 +19,7 @@ use crate::{
 // We need to discern between leaf and intermediate nodes to prevent trivial second
 // pre-image attacks.
 // https://flawed.net.nz/2018/02/21/attacking-merkle-trees-with-a-second-preimage-attack
-const LEAF_PREFIX: &[u8] = &[0];
+pub const LEAF_PREFIX: &[u8] = &[0];
 
 /// [merkle_distributor::new_claim] accounts.
 #[derive(Accounts)]
@@ -92,7 +91,7 @@ pub fn handle_new_claim(
     require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
 
     // check operator
-    distributor.validate_claim(&ctx.accounts.operator)?;
+    distributor.authorize_claim(&ctx.accounts.operator)?;
 
     let activation_handler = distributor.get_activation_handler()?;
     activation_handler.validate_claim()?;
@@ -133,17 +132,18 @@ pub fn handle_new_claim(
     claim_status.closable = distributor.closable();
     claim_status.admin = distributor.admin;
 
-    let unlocked_amount = amount_unlocked;
+    claim_status.unlocked_amount = amount_unlocked;
+    claim_status.bonus_amount =
+        distributor.get_bonus_for_a_claimaint(amount_unlocked, &activation_handler)?;
 
-    let bonus = distributor.get_bonus_for_a_claimaint(unlocked_amount, &activation_handler)?;
-    claim_status.unlocked_amount = unlocked_amount.safe_add(bonus)?;
+    let amount_with_bonus = claim_status.get_total_unlocked_amount()?;
 
     distributor.total_amount_claimed = distributor
         .total_amount_claimed
-        .checked_add(claim_status.unlocked_amount)
+        .checked_add(amount_with_bonus)
         .ok_or(ErrorCode::ArithmeticError)?;
 
-    distributor.accumulate_bonus(bonus)?;
+    distributor.accumulate_bonus(claim_status.bonus_amount)?;
 
     require!(
         distributor.total_amount_claimed <= distributor.max_total_claim,
@@ -154,8 +154,8 @@ pub fn handle_new_claim(
     msg!(
         "Created new claim with locked {}, unlocked {} and bonus {} with lockup start:{} end:{}, activation_point {} current_point {}",
         claim_status.locked_amount,
-        unlocked_amount,
-        bonus,
+        claim_status.unlocked_amount,
+        claim_status.bonus_amount,
         distributor.start_ts,
         distributor.end_ts,
         activation_handler.activation_point,
@@ -186,7 +186,7 @@ pub fn handle_new_claim(
             },
         )
         .with_signer(&[&seeds[..]]),
-        claim_status.unlocked_amount,
+        amount_with_bonus,
     )?;
 
     emit!(NewClaimEvent {

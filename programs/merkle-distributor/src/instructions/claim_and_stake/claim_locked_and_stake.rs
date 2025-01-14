@@ -75,8 +75,11 @@ pub struct ClaimLockedAndStake<'info> {
 #[allow(clippy::result_large_err)]
 pub fn handle_claim_locked_and_stake(ctx: Context<ClaimLockedAndStake>) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;
+
+    require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
+
     // check operator
-    distributor.validate_claim_and_stake(&ctx.accounts.operator)?;
+    distributor.authorize_claim_and_stake(&ctx.accounts.operator)?;
 
     let claim_status = &mut ctx.accounts.claim_status;
     let curr_ts = Clock::get()?.unix_timestamp;

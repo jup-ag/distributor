@@ -53,7 +53,7 @@ pub enum ErrorCode {
     InvalidOperator,
     #[msg("Invalid claim type")]
     InvalidClaimType,
-    #[msg("same operator")]
+    #[msg("Same operator")]
     SameOperator,
     #[msg("Invalid locker")]
     InvalidLocker,

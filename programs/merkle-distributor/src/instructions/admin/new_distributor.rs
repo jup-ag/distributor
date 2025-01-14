@@ -58,17 +58,16 @@ impl NewDistributorParams {
             self.start_vesting_ts < self.end_vesting_ts,
             ErrorCode::StartTimestampAfterEnd
         );
-        // New distributor parameters must all be set in the future
-        require!(
-            self.start_vesting_ts > curr_ts
-                && self.end_vesting_ts > curr_ts
-                && self.clawback_start_ts > curr_ts,
-            ErrorCode::TimestampsNotInFuture
-        );
 
         require!(
             self.clawback_start_ts > self.end_vesting_ts,
             ErrorCode::ClawbackDuringVesting
+        );
+
+        // New distributor parameters must all be set in the future
+        require!(
+            self.start_vesting_ts > curr_ts,
+            ErrorCode::TimestampsNotInFuture
         );
 
         // Ensure clawback_start_ts is at least one day after end_vesting_ts

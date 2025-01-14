@@ -6,7 +6,7 @@ use crate::{error::ErrorCode, state::merkle_distributor::MerkleDistributor};
 #[derive(Accounts)]
 pub struct SetAdmin<'info> {
     /// The [MerkleDistributor].
-    #[account(mut, has_one = admin)]
+    #[account(mut, has_one = admin @ ErrorCode::Unauthorized)]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
 
     /// Admin signer

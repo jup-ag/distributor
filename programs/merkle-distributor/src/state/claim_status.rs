@@ -17,6 +17,8 @@ pub struct ClaimStatus {
     pub locked_amount_withdrawn: u64,
     /// Unlocked amount
     pub unlocked_amount: u64,
+    /// Bonus amount
+    pub bonus_amount: u64,
     /// indicate that whether admin can close this account, for testing purpose
     pub closable: bool,
     /// admin of merkle tree, store for for testing purpose
@@ -75,6 +77,14 @@ impl ClaimStatus {
         } else {
             Ok(0)
         }
+    }
+
+    pub fn get_total_unlocked_amount(&self) -> Result<u64> {
+        let amount = self
+            .unlocked_amount
+            .checked_add(self.bonus_amount)
+            .ok_or(ArithmeticError)?;
+        Ok(amount)
     }
 }
 

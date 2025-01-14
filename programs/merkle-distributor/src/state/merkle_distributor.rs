@@ -176,7 +176,7 @@ impl MerkleDistributor {
         self.closable == 1
     }
 
-    pub fn validate_claim<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
+    pub fn authorize_claim<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
         // check operator
         let claim_type =
             ClaimType::try_from(self.claim_type).map_err(|_| ErrorCode::TypeCastedError)?;
@@ -194,7 +194,7 @@ impl MerkleDistributor {
         Ok(())
     }
 
-    pub fn validate_claim_and_stake<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
+    pub fn authorize_claim_and_stake<'info>(&self, operator: &Option<Signer<'info>>) -> Result<()> {
         // check operator
         let claim_type =
             ClaimType::try_from(self.claim_type).map_err(|_| ErrorCode::TypeCastedError)?;
