@@ -47,4 +47,16 @@ pub enum ErrorCode {
     CannotCloseClaimStatus,
     #[msg("Invalid activation type")]
     InvalidActivationType,
+    #[msg("Type casted error")]
+    TypeCastedError,
+    #[msg("Invalid operator")]
+    InvalidOperator,
+    #[msg("Invalid claim type")]
+    InvalidClaimType,
+    #[msg("Same operator")]
+    SameOperator,
+    #[msg("Invalid locker")]
+    InvalidLocker,
+    #[msg("Escrow is not max lock")]
+    EscrowIsNotMaxLock,
 }

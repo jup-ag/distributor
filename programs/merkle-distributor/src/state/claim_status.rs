@@ -1,11 +1,16 @@
 use anchor_lang::prelude::*;
 
 use crate::error::ErrorCode::ArithmeticError;
+use static_assertions::const_assert;
 
 /// Holds whether or not a claimant has claimed tokens.
-#[account]
-#[derive(Default)]
+#[account(zero_copy)]
+#[derive(Default, InitSpace)]
 pub struct ClaimStatus {
+    /// admin of merkle tree, store for for testing purpose
+    pub admin: Pubkey,
+    /// distributor
+    pub distributor: Pubkey,
     /// Authority that claimed the tokens.
     pub claimant: Pubkey,
     /// Locked amount  
@@ -14,14 +19,18 @@ pub struct ClaimStatus {
     pub locked_amount_withdrawn: u64,
     /// Unlocked amount
     pub unlocked_amount: u64,
+    /// Bonus amount
+    pub bonus_amount: u64,
     /// indicate that whether admin can close this account, for testing purpose
-    pub closable: bool,
-    /// admin of merkle tree, store for for testing purpose
-    pub admin: Pubkey,
+    pub closable: u8,
+    /// padding
+    pub padding: [u8; 7],
 }
 
+const_assert!(ClaimStatus::INIT_SPACE <= ClaimStatus::LEN);
+
 impl ClaimStatus {
-    pub const LEN: usize = 8 + std::mem::size_of::<ClaimStatus>();
+    pub const LEN: usize = 200;
 
     /// Returns amount withdrawable, factoring in unlocked tokens and previous withdraws.
     /// payout is difference between the amount unlocked and the amount withdrawn
@@ -71,4 +80,21 @@ impl ClaimStatus {
             Ok(0)
         }
     }
+
+    pub fn get_total_unlocked_amount(&self) -> Result<u64> {
+        let amount = self
+            .unlocked_amount
+            .checked_add(self.bonus_amount)
+            .ok_or(ArithmeticError)?;
+        Ok(amount)
+    }
+
+    pub fn closable(&self) -> bool {
+        self.closable == 1
+    }
 }
+
+// #[test]
+// fn test_size() {
+//     println!("{} ", ClaimStatus::INIT_SPACE)
+// }

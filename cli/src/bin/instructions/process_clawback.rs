@@ -1,6 +1,5 @@
 use crate::*;
 use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
-use anchor_lang::system_program;
 use anyhow::Error;
 use std::{thread, time::Duration};
 
@@ -46,7 +45,7 @@ fn clawback(args: &Args, clawback_args: &ClawbackArgs) -> Result<()> {
             break;
         }
         let distributor_state = program.account::<MerkleDistributor>(distributor)?;
-        if distributor_state.clawed_back {
+        if distributor_state.clawed_back() {
             println!("already clawback {}", version);
             continue;
         }
@@ -65,9 +64,7 @@ fn clawback(args: &Args, clawback_args: &ClawbackArgs) -> Result<()> {
                 distributor,
                 from: distributor_state.token_vault,
                 token_program: spl_token::ID,
-                to: distributor_state.clawback_receiver,
-                claimant: keypair.pubkey(),
-                system_program: system_program::ID,
+                clawback_receiver: distributor_state.clawback_receiver,
             }
             .to_account_metas(None),
             data: merkle_distributor::instruction::Clawback {}.data(),

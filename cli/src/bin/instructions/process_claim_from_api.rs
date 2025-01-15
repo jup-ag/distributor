@@ -55,6 +55,7 @@ pub fn process_claim_from_api(args: &Args, claim_args: &ClaimFromApiArgs) {
             claimant,
             token_program: token::ID,
             system_program: solana_program::system_program::ID,
+            operator: None,
         }
         .to_account_metas(None),
         data: merkle_distributor::instruction::NewClaim {

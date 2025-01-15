@@ -14,14 +14,12 @@
 use anchor_lang::prelude::*;
 use instructions::*;
 
-// pub mod activation;
 pub mod error;
 pub mod instructions;
 pub mod math;
 pub mod state;
-use crate::error::ErrorCode::ArithmeticError;
 use solana_security_txt::security_txt;
-declare_id!("DiSLRwcSFvtwvMWSs7ubBMvYRaYNYupa76ZSuYLe6D7j");
+declare_id!("DiS3nNjFVMieMgmiQFm6wgJL7nevk4NrhXKLbtEH1Z2R");
 
 security_txt! {
     // Required fields
@@ -38,72 +36,15 @@ security_txt! {
 pub mod merkle_distributor {
     use super::*;
 
+    /// ADMIN FUNCTIONS ////
     #[allow(clippy::result_large_err)]
     pub fn new_distributor(
         ctx: Context<NewDistributor>,
-        version: u64,
-        root: [u8; 32],
-        max_total_claim: u64,
-        max_num_nodes: u64,
-        start_vesting_ts: i64,
-        end_vesting_ts: i64,
-        clawback_start_ts: i64,
-        activation_point: u64, // can be slot or timestamp
-        activation_type: u8,
-        closable: bool,
+        params: NewDistributorParams,
     ) -> Result<()> {
-        handle_new_distributor(
-            ctx,
-            version,
-            root,
-            max_total_claim,
-            max_num_nodes,
-            start_vesting_ts,
-            end_vesting_ts,
-            clawback_start_ts,
-            activation_point,
-            activation_type,
-            closable,
-            0,
-            0,
-        )
+        handle_new_distributor(ctx, &params)
     }
 
-    #[allow(clippy::result_large_err)]
-    pub fn new_distributor2(
-        ctx: Context<NewDistributor>,
-        version: u64,
-        root: [u8; 32],
-        total_claim: u64,
-        max_num_nodes: u64,
-        start_vesting_ts: i64,
-        end_vesting_ts: i64,
-        clawback_start_ts: i64,
-        activation_point: u64, // can be slot or timestamp
-        activation_type: u8,
-        closable: bool,
-        total_bonus: u64,
-        bonus_vesting_duration: u64,
-    ) -> Result<()> {
-        let max_total_claim = total_claim
-            .checked_add(total_bonus)
-            .ok_or(ArithmeticError)?;
-        handle_new_distributor(
-            ctx,
-            version,
-            root,
-            max_total_claim,
-            max_num_nodes,
-            start_vesting_ts,
-            end_vesting_ts,
-            clawback_start_ts,
-            activation_point,
-            activation_type,
-            closable,
-            total_bonus,
-            bonus_vesting_duration,
-        )
-    }
     /// only available in test phase
     #[allow(clippy::result_large_err)]
     pub fn close_distributor(ctx: Context<CloseDistributor>) -> Result<()> {
@@ -124,6 +65,28 @@ pub mod merkle_distributor {
     }
 
     #[allow(clippy::result_large_err)]
+    pub fn clawback(ctx: Context<Clawback>) -> Result<()> {
+        handle_clawback(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn set_clawback_receiver(ctx: Context<SetClawbackReceiver>) -> Result<()> {
+        handle_set_clawback_receiver(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn set_admin(ctx: Context<SetAdmin>) -> Result<()> {
+        handle_set_admin(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn set_operator(ctx: Context<SetOperator>, new_operator: Pubkey) -> Result<()> {
+        handle_set_operator(ctx, new_operator)
+    }
+
+    //// END ADMIN FUNCTIONS ////
+    /// USER FUNCTIONS /////
+    #[allow(clippy::result_large_err)]
     pub fn new_claim(
         ctx: Context<NewClaim>,
         amount_unlocked: u64,
@@ -139,17 +102,18 @@ pub mod merkle_distributor {
     }
 
     #[allow(clippy::result_large_err)]
-    pub fn clawback(ctx: Context<Clawback>) -> Result<()> {
-        handle_clawback(ctx)
+    pub fn new_claim_and_stake(
+        ctx: Context<NewClaimAndStake>,
+        amount_unlocked: u64,
+        amount_locked: u64,
+        proof: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        handle_new_claim_and_stake(ctx, amount_unlocked, amount_locked, proof)
     }
 
     #[allow(clippy::result_large_err)]
-    pub fn set_clawback_receiver(ctx: Context<SetClawbackReceiver>) -> Result<()> {
-        handle_set_clawback_receiver(ctx)
+    pub fn claim_locked_and_stake(ctx: Context<ClaimLockedAndStake>) -> Result<()> {
+        handle_claim_locked_and_stake(ctx)
     }
-
-    #[allow(clippy::result_large_err)]
-    pub fn set_admin(ctx: Context<SetAdmin>) -> Result<()> {
-        handle_set_admin(ctx)
-    }
+    // END USER FUNCTIONS //
 }

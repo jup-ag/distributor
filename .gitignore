@@ -3,7 +3,6 @@
 .anchor
 .DS_Store
 target/*
-!target/types
 **/*.rs.bk
 
 # Created by https://www.toptal.com/developers/gitignore/api/node
@@ -140,6 +139,5 @@ __pycache__/
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
-artifacts/
 src/idls/
 data/distributor-info.json

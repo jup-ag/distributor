@@ -59,7 +59,7 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
             verfify_args.clawback_start_ts
         );
 
-        assert_eq!(merke_tree_state.closable, verfify_args.closable);
+        assert_eq!(merke_tree_state.closable(), verfify_args.closable);
 
         assert_eq!(merke_tree_state.admin, verfify_args.admin);
         assert_eq!(

@@ -2,6 +2,7 @@ use std::{thread, time::Duration};
 
 use anchor_client::solana_sdk::compute_budget::ComputeBudgetInstruction;
 use anyhow::{Error, Result};
+use merkle_distributor::instructions::NewDistributorParams;
 
 use crate::*;
 
@@ -9,7 +10,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
     println!("creating new distributor with args: {new_distributor_args:#?}");
 
     for i in (1..10).rev() {
-        match create_new_distributor(args, new_distributor_args, 0, 0) {
+        match create_new_distributor(args, new_distributor_args) {
             Ok(_) => {
                 println!("Done create all distributors");
                 return;
@@ -21,7 +22,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
                 );
                 thread::sleep(Duration::from_secs(5));
                 if i == 1 {
-                    create_new_distributor(args, new_distributor_args, 0, 0)
+                    create_new_distributor(args, new_distributor_args)
                         .expect("Failed to create distributors");
                 }
             }
@@ -29,58 +30,7 @@ pub fn process_new_distributor(args: &Args, new_distributor_args: &NewDistributo
     }
 }
 
-pub fn process_new_distributor_with_bonus(
-    args: &Args,
-    new_distributor_args: &NewDistributorWithBonusArgs,
-) {
-    println!("creating new distributor with args: {new_distributor_args:#?}");
-
-    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
-    let average_slot_time = get_average_slot_time(&client).unwrap();
-    let bonus_vesting_slot_duration = new_distributor_args
-        .bonus_vesting_duration
-        .checked_mul(1000)
-        .unwrap()
-        .checked_div(average_slot_time)
-        .unwrap();
-
-    for i in (1..10).rev() {
-        match create_new_distributor(
-            args,
-            &new_distributor_args.to_new_distributor_args(),
-            new_distributor_args.bonus_multiplier,
-            bonus_vesting_slot_duration,
-        ) {
-            Ok(_) => {
-                println!("Done create all distributors");
-                return;
-            }
-            Err(_) => {
-                println!(
-                    "Failed to create distributors, retrying, {} time remaining",
-                    i
-                );
-                thread::sleep(Duration::from_secs(5));
-                if i == 1 {
-                    create_new_distributor(
-                        args,
-                        &new_distributor_args.to_new_distributor_args(),
-                        new_distributor_args.bonus_multiplier,
-                        bonus_vesting_slot_duration,
-                    )
-                    .expect("Failed to create distributors");
-                }
-            }
-        }
-    }
-}
-
-fn create_new_distributor(
-    args: &Args,
-    new_distributor_args: &NewDistributorArgs,
-    bonus_multiplier: u64,
-    bonus_vesting_duration: u64,
-) -> Result<()> {
+fn create_new_distributor(args: &Args, new_distributor_args: &NewDistributorArgs) -> Result<()> {
     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
     let keypair = read_keypair_file(&args.keypair_path.clone().unwrap()).unwrap();
     let base = read_keypair_file(&new_distributor_args.base_path).unwrap();
@@ -98,7 +48,7 @@ fn create_new_distributor(
 
         let total_bonus = merkle_tree
             .total_unlocked_amount
-            .checked_mul(bonus_multiplier)
+            .checked_mul(new_distributor_args.bonus_multiplier)
             .unwrap();
 
         if new_distributor_args.airdrop_version.is_some() {
@@ -127,7 +77,6 @@ fn create_new_distributor(
                 &merkle_tree,
                 new_distributor_args,
                 total_bonus,
-                bonus_vesting_duration,
                 keypair.pubkey(),
                 base.pubkey(),
                 &args,
@@ -174,51 +123,21 @@ fn create_new_distributor(
             );
         }
 
-        if total_bonus == 0 {
-            ixs.push(Instruction {
-                program_id: args.program_id,
-                accounts: merkle_distributor::accounts::NewDistributor {
-                    base: base.pubkey(),
-                    clawback_receiver,
-                    mint: args.mint,
-                    token_vault,
-                    distributor: distributor_pubkey,
-                    system_program: solana_program::system_program::id(),
-                    associated_token_program: spl_associated_token_account::ID,
-                    token_program: token::ID,
-                    admin: keypair.pubkey(),
-                }
-                .to_account_metas(None),
-                data: merkle_distributor::instruction::NewDistributor {
-                    version: merkle_tree.airdrop_version,
-                    root: merkle_tree.merkle_root,
-                    max_total_claim: merkle_tree.get_max_total_claim(),
-                    max_num_nodes: merkle_tree.max_num_nodes,
-                    start_vesting_ts: new_distributor_args.start_vesting_ts,
-                    end_vesting_ts: new_distributor_args.end_vesting_ts,
-                    clawback_start_ts: new_distributor_args.clawback_start_ts,
-                    activation_point: new_distributor_args.activation_point,
-                    activation_type: new_distributor_args.activation_type,
-                    closable: new_distributor_args.closable,
-                }
-                .data(),
-            });
-        } else {
-            ixs.push(Instruction {
-                program_id: args.program_id,
-                accounts: merkle_distributor::accounts::NewDistributor {
-                    base: base.pubkey(),
-                    clawback_receiver,
-                    mint: args.mint,
-                    token_vault,
-                    distributor: distributor_pubkey,
-                    system_program: solana_program::system_program::id(),
-                    associated_token_program: spl_associated_token_account::ID,
-                    token_program: token::ID,
-                    admin: keypair.pubkey(),
-                }
-                .to_account_metas(None),
-                data: merkle_distributor::instruction::NewDistributor2 {
+        ixs.push(Instruction {
+            program_id: args.program_id,
+            accounts: merkle_distributor::accounts::NewDistributor {
+                base: base.pubkey(),
+                clawback_receiver,
+                mint: args.mint,
+                token_vault,
+                distributor: distributor_pubkey,
+                system_program: solana_program::system_program::id(),
+                token_program: token::ID,
+                admin: keypair.pubkey(),
+            }
+            .to_account_metas(None),
+            data: merkle_distributor::instruction::NewDistributor {
+                params: NewDistributorParams {
                     version: merkle_tree.airdrop_version,
                     root: merkle_tree.merkle_root,
                     total_claim: merkle_tree.get_max_total_claim(),
@@ -230,11 +149,14 @@ fn create_new_distributor(
                     activation_type: new_distributor_args.activation_type,
                     closable: new_distributor_args.closable,
                     total_bonus,
-                    bonus_vesting_duration,
-                }
-                .data(),
-            });
-        }
+                    locker: new_distributor_args.locker,
+                    operator: new_distributor_args.operator,
+                    claim_type: new_distributor_args.claim_type,
+                    bonus_vesting_duration: new_distributor_args.bonus_vesting_duration,
+                },
+            }
+            .data(),
+        });
 
         let blockhash = client.get_latest_blockhash().unwrap();
         let tx = Transaction::new_signed_with_payer(
@@ -287,7 +209,6 @@ fn create_new_distributor(
                   &merkle_tree,
                   new_distributor_args,
                   total_bonus,
-                  bonus_vesting_duration,
                   keypair.pubkey(),
                   base.pubkey(),
                   args,

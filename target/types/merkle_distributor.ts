@@ -1,9 +1,12 @@
 export type MerkleDistributor = {
-  "version": "0.0.2",
+  "version": "0.1.0",
   "name": "merkle_distributor",
   "instructions": [
     {
       "name": "newDistributor",
+      "docs": [
+        "ADMIN FUNCTIONS ////"
+      ],
       "accounts": [
         {
           "name": "distributor",
@@ -89,14 +92,6 @@ export type MerkleDistributor = {
           ]
         },
         {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Associated Token] program."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
@@ -107,200 +102,10 @@ export type MerkleDistributor = {
       ],
       "args": [
         {
-          "name": "version",
-          "type": "u64"
-        },
-        {
-          "name": "root",
+          "name": "params",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "defined": "NewDistributorParams"
           }
-        },
-        {
-          "name": "maxTotalClaim",
-          "type": "u64"
-        },
-        {
-          "name": "maxNumNodes",
-          "type": "u64"
-        },
-        {
-          "name": "startVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "endVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "clawbackStartTs",
-          "type": "i64"
-        },
-        {
-          "name": "enableSlot",
-          "type": "u64"
-        },
-        {
-          "name": "closable",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "newDistributor2",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "[MerkleDistributor]."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "MerkleDistributor"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "base"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "Mint",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "type": "u64",
-                "path": "version"
-              }
-            ]
-          }
-        },
-        {
-          "name": "base",
-          "isMut": false,
-          "isSigner": true,
-          "docs": [
-            "Base key of the distributor."
-          ]
-        },
-        {
-          "name": "clawbackReceiver",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Clawback receiver token account"
-          ]
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The mint to distribute."
-          ]
-        },
-        {
-          "name": "tokenVault",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Token vault",
-            "Should create previously"
-          ]
-        },
-        {
-          "name": "admin",
-          "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
-          ]
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [System] program."
-          ]
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Associated Token] program."
-          ]
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Token] program."
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "version",
-          "type": "u64"
-        },
-        {
-          "name": "root",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "totalClaim",
-          "type": "u64"
-        },
-        {
-          "name": "maxNumNodes",
-          "type": "u64"
-        },
-        {
-          "name": "startVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "endVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "clawbackStartTs",
-          "type": "i64"
-        },
-        {
-          "name": "enableSlot",
-          "type": "u64"
-        },
-        {
-          "name": "closable",
-          "type": "bool"
-        },
-        {
-          "name": "totalBonus",
-          "type": "u64"
-        },
-        {
-          "name": "bonusVestingSlotDuration",
-          "type": "u64"
         }
       ]
     },
@@ -387,7 +192,7 @@ export type MerkleDistributor = {
       "args": []
     },
     {
-      "name": "setEnableSlot",
+      "name": "setActivationPoint",
       "accounts": [
         {
           "name": "distributor",
@@ -411,13 +216,153 @@ export type MerkleDistributor = {
       ],
       "args": [
         {
-          "name": "enableSlot",
+          "name": "activationPoint",
           "type": "u64"
         }
       ]
     },
     {
+      "name": "clawback",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "clawback_receiver"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "clawbackReceiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The Clawback token account."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setClawbackReceiver",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "newClawbackAccount",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "New clawback account"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setAdmin",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        },
+        {
+          "name": "newAdmin",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "New admin account"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setOperator",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "newOperator",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "newClaim",
+      "docs": [
+        "USER FUNCTIONS /////"
+      ],
       "accounts": [
         {
           "name": "distributor",
@@ -449,7 +394,6 @@ export type MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "account": "MerkleDistributor",
                 "path": "distributor"
               }
             ]
@@ -477,6 +421,15 @@ export type MerkleDistributor = {
           "isSigner": true,
           "docs": [
             "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
           ]
         },
         {
@@ -536,6 +489,76 @@ export type MerkleDistributor = {
           "docs": [
             "Claim Status PDA"
           ],
+          "relations": [
+            "distributor",
+            "claimant"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "to",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Account to send the claimed tokens to."
+          ]
+        },
+        {
+          "name": "claimant",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "newClaimAndStake",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
+          ]
+        },
+        {
+          "name": "claimStatus",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Claim status PDA"
+          ],
           "pda": {
             "seeds": [
               {
@@ -551,7 +574,6 @@ export type MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "account": "MerkleDistributor",
                 "path": "distributor"
               }
             ]
@@ -566,15 +588,6 @@ export type MerkleDistributor = {
           ]
         },
         {
-          "name": "to",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Account to send the claimed tokens to.",
-            "Claimant must sign the transaction and can only claim on behalf of themself"
-          ]
-        },
-        {
           "name": "claimant",
           "isMut": true,
           "isSigner": true,
@@ -583,50 +596,20 @@ export type MerkleDistributor = {
           ]
         },
         {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
             "SPL [Token] program."
-          ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "clawback",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
-        },
-        {
-          "name": "from",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Distributor ATA containing the tokens to distribute."
-          ]
-        },
-        {
-          "name": "to",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The Clawback token account."
-          ]
-        },
-        {
-          "name": "claimant",
-          "isMut": false,
-          "isSigner": true,
-          "docs": [
-            "Claimant account",
-            "Anyone can claw back the funds"
           ]
         },
         {
@@ -638,72 +621,132 @@ export type MerkleDistributor = {
           ]
         },
         {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountUnlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amountLocked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "claimLockedAndStake",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
+          ]
+        },
+        {
+          "name": "claimStatus",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Claim Status PDA"
+          ],
+          "relations": [
+            "distributor",
+            "claimant"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "claimant",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
             "SPL [Token] program."
           ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "setClawbackReceiver",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
         },
         {
-          "name": "newClawbackAccount",
+          "name": "voterProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "New clawback account"
+            "Voter program"
           ]
         },
         {
-          "name": "admin",
+          "name": "locker",
           "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin signer"
-          ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "setAdmin",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
+          "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "escrow",
           "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin signer"
-          ]
+          "isSigner": false
         },
         {
-          "name": "newAdmin",
+          "name": "escrowTokens",
           "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "New admin account"
-          ]
+          "isSigner": false
         }
       ],
       "args": []
@@ -718,6 +761,13 @@ export type MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "distributor",
+            "docs": [
+              "distributor"
+            ],
+            "type": "publicKey"
+          },
           {
             "name": "claimant",
             "docs": [
@@ -772,20 +822,6 @@ export type MerkleDistributor = {
         "kind": "struct",
         "fields": [
           {
-            "name": "bump",
-            "docs": [
-              "Bump seed."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version of the airdrop"
-            ],
-            "type": "u64"
-          },
-          {
             "name": "root",
             "docs": [
               "The 256-bit merkle root."
@@ -817,6 +853,41 @@ export type MerkleDistributor = {
               "Token Address of the vault"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "clawbackReceiver",
+            "docs": [
+              "Clawback receiver"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin wallet"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "locker",
+            "docs": [
+              "locker, for claim type claim and stake"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "operator",
+            "docs": [
+              "operator for signing in permissioned merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Version of the airdrop"
+            ],
+            "type": "u64"
           },
           {
             "name": "maxTotalClaim",
@@ -868,83 +939,63 @@ export type MerkleDistributor = {
             "type": "i64"
           },
           {
-            "name": "clawbackReceiver",
+            "name": "activationPoint",
             "docs": [
-              "Clawback receiver"
+              "this merkle tree is activated from this slot or timestamp"
             ],
-            "type": "publicKey"
+            "type": "u64"
           },
           {
-            "name": "admin",
+            "name": "activationType",
             "docs": [
-              "Admin wallet"
+              "activation type, 0 means slot, 1 means timestamp"
             ],
-            "type": "publicKey"
+            "type": "u8"
+          },
+          {
+            "name": "claimType",
+            "docs": [
+              "claim type"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
           },
           {
             "name": "clawedBack",
             "docs": [
               "Whether or not the distributor has been clawed back"
             ],
-            "type": "bool"
-          },
-          {
-            "name": "enableSlot",
-            "docs": [
-              "this merkle tree is enable from this slot"
-            ],
-            "type": "u64"
+            "type": "u8"
           },
           {
             "name": "closable",
             "docs": [
               "indicate that whether admin can close this pool, for testing purpose"
             ],
-            "type": "bool"
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "Padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           },
           {
             "name": "airdropBonus",
-            "docs": [
-              "bonus multiplier"
-            ],
             "type": {
               "defined": "AirdropBonus"
-            }
-          },
-          {
-            "name": "buffer0",
-            "docs": [
-              "Buffer 0"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
-          },
-          {
-            "name": "buffer1",
-            "docs": [
-              "Buffer 1"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "buffer2",
-            "docs": [
-              "Buffer 2"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]
@@ -952,6 +1003,79 @@ export type MerkleDistributor = {
     }
   ],
   "types": [
+    {
+      "name": "NewDistributorParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u64"
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "totalClaim",
+            "type": "u64"
+          },
+          {
+            "name": "maxNumNodes",
+            "type": "u64"
+          },
+          {
+            "name": "startVestingTs",
+            "type": "i64"
+          },
+          {
+            "name": "endVestingTs",
+            "type": "i64"
+          },
+          {
+            "name": "clawbackStartTs",
+            "type": "i64"
+          },
+          {
+            "name": "activationPoint",
+            "type": "u64"
+          },
+          {
+            "name": "activationType",
+            "type": "u8"
+          },
+          {
+            "name": "closable",
+            "type": "bool"
+          },
+          {
+            "name": "totalBonus",
+            "type": "u64"
+          },
+          {
+            "name": "bonusVestingDuration",
+            "type": "u64"
+          },
+          {
+            "name": "claimType",
+            "type": "u8"
+          },
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "locker",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
     {
       "name": "AirdropBonus",
       "type": {
@@ -965,7 +1089,7 @@ export type MerkleDistributor = {
             "type": "u64"
           },
           {
-            "name": "vestingSlotDuration",
+            "name": "vestingDuration",
             "type": "u64"
           },
           {
@@ -974,6 +1098,46 @@ export type MerkleDistributor = {
               "total bonus"
             ],
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ActivationType",
+      "docs": [
+        "Type of the activation"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Slot"
+          },
+          {
+            "name": "Timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimType",
+      "docs": [
+        "Type of the activation"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Permissionless"
+          },
+          {
+            "name": "Permissioned"
+          },
+          {
+            "name": "PermissionlessWithStaking"
+          },
+          {
+            "name": "PermissionedWithStaking"
           }
         ]
       }
@@ -1116,16 +1280,54 @@ export type MerkleDistributor = {
       "code": 6020,
       "name": "CannotCloseClaimStatus",
       "msg": "Cannot close claim status"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidActivationType",
+      "msg": "Invalid activation type"
+    },
+    {
+      "code": 6022,
+      "name": "TypeCastedError",
+      "msg": "Type casted error"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidOperator",
+      "msg": "Invalid operator"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidClaimType",
+      "msg": "Invalid claim type"
+    },
+    {
+      "code": 6025,
+      "name": "SameOperator",
+      "msg": "same operator"
+    },
+    {
+      "code": 6026,
+      "name": "InvalidLocker",
+      "msg": "Invalid locker"
+    },
+    {
+      "code": 6027,
+      "name": "EscrowIsNotMaxLock",
+      "msg": "Escrow is not max lock"
     }
   ]
 };
 
 export const IDL: MerkleDistributor = {
-  "version": "0.0.2",
+  "version": "0.1.0",
   "name": "merkle_distributor",
   "instructions": [
     {
       "name": "newDistributor",
+      "docs": [
+        "ADMIN FUNCTIONS ////"
+      ],
       "accounts": [
         {
           "name": "distributor",
@@ -1211,14 +1413,6 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Associated Token] program."
-          ]
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
@@ -1229,200 +1423,10 @@ export const IDL: MerkleDistributor = {
       ],
       "args": [
         {
-          "name": "version",
-          "type": "u64"
-        },
-        {
-          "name": "root",
+          "name": "params",
           "type": {
-            "array": [
-              "u8",
-              32
-            ]
+            "defined": "NewDistributorParams"
           }
-        },
-        {
-          "name": "maxTotalClaim",
-          "type": "u64"
-        },
-        {
-          "name": "maxNumNodes",
-          "type": "u64"
-        },
-        {
-          "name": "startVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "endVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "clawbackStartTs",
-          "type": "i64"
-        },
-        {
-          "name": "enableSlot",
-          "type": "u64"
-        },
-        {
-          "name": "closable",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "newDistributor2",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "[MerkleDistributor]."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "MerkleDistributor"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "base"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "account": "Mint",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "type": "u64",
-                "path": "version"
-              }
-            ]
-          }
-        },
-        {
-          "name": "base",
-          "isMut": false,
-          "isSigner": true,
-          "docs": [
-            "Base key of the distributor."
-          ]
-        },
-        {
-          "name": "clawbackReceiver",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Clawback receiver token account"
-          ]
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The mint to distribute."
-          ]
-        },
-        {
-          "name": "tokenVault",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Token vault",
-            "Should create previously"
-          ]
-        },
-        {
-          "name": "admin",
-          "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
-          ]
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [System] program."
-          ]
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Associated Token] program."
-          ]
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The [Token] program."
-          ]
-        }
-      ],
-      "args": [
-        {
-          "name": "version",
-          "type": "u64"
-        },
-        {
-          "name": "root",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
-        },
-        {
-          "name": "totalClaim",
-          "type": "u64"
-        },
-        {
-          "name": "maxNumNodes",
-          "type": "u64"
-        },
-        {
-          "name": "startVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "endVestingTs",
-          "type": "i64"
-        },
-        {
-          "name": "clawbackStartTs",
-          "type": "i64"
-        },
-        {
-          "name": "enableSlot",
-          "type": "u64"
-        },
-        {
-          "name": "closable",
-          "type": "bool"
-        },
-        {
-          "name": "totalBonus",
-          "type": "u64"
-        },
-        {
-          "name": "bonusVestingSlotDuration",
-          "type": "u64"
         }
       ]
     },
@@ -1509,7 +1513,7 @@ export const IDL: MerkleDistributor = {
       "args": []
     },
     {
-      "name": "setEnableSlot",
+      "name": "setActivationPoint",
       "accounts": [
         {
           "name": "distributor",
@@ -1533,13 +1537,153 @@ export const IDL: MerkleDistributor = {
       ],
       "args": [
         {
-          "name": "enableSlot",
+          "name": "activationPoint",
           "type": "u64"
         }
       ]
     },
     {
+      "name": "clawback",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "clawback_receiver"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "clawbackReceiver",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The Clawback token account."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setClawbackReceiver",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "newClawbackAccount",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "New clawback account"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setAdmin",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        },
+        {
+          "name": "newAdmin",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "New admin account"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setOperator",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "admin"
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Admin signer"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "newOperator",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "newClaim",
+      "docs": [
+        "USER FUNCTIONS /////"
+      ],
       "accounts": [
         {
           "name": "distributor",
@@ -1571,7 +1715,6 @@ export const IDL: MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "account": "MerkleDistributor",
                 "path": "distributor"
               }
             ]
@@ -1599,6 +1742,15 @@ export const IDL: MerkleDistributor = {
           "isSigner": true,
           "docs": [
             "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
           ]
         },
         {
@@ -1658,6 +1810,76 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "Claim Status PDA"
           ],
+          "relations": [
+            "distributor",
+            "claimant"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "to",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Account to send the claimed tokens to."
+          ]
+        },
+        {
+          "name": "claimant",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "newClaimAndStake",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
+          ]
+        },
+        {
+          "name": "claimStatus",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Claim status PDA"
+          ],
           "pda": {
             "seeds": [
               {
@@ -1673,7 +1895,6 @@ export const IDL: MerkleDistributor = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "account": "MerkleDistributor",
                 "path": "distributor"
               }
             ]
@@ -1688,15 +1909,6 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
-          "name": "to",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Account to send the claimed tokens to.",
-            "Claimant must sign the transaction and can only claim on behalf of themself"
-          ]
-        },
-        {
           "name": "claimant",
           "isMut": true,
           "isSigner": true,
@@ -1705,50 +1917,20 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
             "SPL [Token] program."
-          ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "clawback",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
-        },
-        {
-          "name": "from",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Distributor ATA containing the tokens to distribute."
-          ]
-        },
-        {
-          "name": "to",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The Clawback token account."
-          ]
-        },
-        {
-          "name": "claimant",
-          "isMut": false,
-          "isSigner": true,
-          "docs": [
-            "Claimant account",
-            "Anyone can claw back the funds"
           ]
         },
         {
@@ -1760,72 +1942,132 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
+          "name": "voterProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Voter program"
+          ]
+        },
+        {
+          "name": "locker",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrow",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "escrowTokens",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountUnlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amountLocked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "claimLockedAndStake",
+      "accounts": [
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "relations": [
+            "locker"
+          ]
+        },
+        {
+          "name": "claimStatus",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Claim Status PDA"
+          ],
+          "relations": [
+            "distributor",
+            "claimant"
+          ]
+        },
+        {
+          "name": "from",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ]
+        },
+        {
+          "name": "claimant",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Who is claiming the tokens."
+          ]
+        },
+        {
+          "name": "operator",
+          "isMut": false,
+          "isSigner": true,
+          "isOptional": true,
+          "docs": [
+            "operator"
+          ]
+        },
+        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
             "SPL [Token] program."
           ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "setClawbackReceiver",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
         },
         {
-          "name": "newClawbackAccount",
+          "name": "voterProgram",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "New clawback account"
+            "Voter program"
           ]
         },
         {
-          "name": "admin",
+          "name": "locker",
           "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin signer"
-          ]
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "setAdmin",
-      "accounts": [
-        {
-          "name": "distributor",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "The [MerkleDistributor]."
-          ]
+          "isSigner": false
         },
         {
-          "name": "admin",
+          "name": "escrow",
           "isMut": true,
-          "isSigner": true,
-          "docs": [
-            "Admin signer"
-          ]
+          "isSigner": false
         },
         {
-          "name": "newAdmin",
+          "name": "escrowTokens",
           "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "New admin account"
-          ]
+          "isSigner": false
         }
       ],
       "args": []
@@ -1840,6 +2082,13 @@ export const IDL: MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "distributor",
+            "docs": [
+              "distributor"
+            ],
+            "type": "publicKey"
+          },
           {
             "name": "claimant",
             "docs": [
@@ -1894,20 +2143,6 @@ export const IDL: MerkleDistributor = {
         "kind": "struct",
         "fields": [
           {
-            "name": "bump",
-            "docs": [
-              "Bump seed."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "version",
-            "docs": [
-              "Version of the airdrop"
-            ],
-            "type": "u64"
-          },
-          {
             "name": "root",
             "docs": [
               "The 256-bit merkle root."
@@ -1939,6 +2174,41 @@ export const IDL: MerkleDistributor = {
               "Token Address of the vault"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "clawbackReceiver",
+            "docs": [
+              "Clawback receiver"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin wallet"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "locker",
+            "docs": [
+              "locker, for claim type claim and stake"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "operator",
+            "docs": [
+              "operator for signing in permissioned merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "version",
+            "docs": [
+              "Version of the airdrop"
+            ],
+            "type": "u64"
           },
           {
             "name": "maxTotalClaim",
@@ -1990,83 +2260,63 @@ export const IDL: MerkleDistributor = {
             "type": "i64"
           },
           {
-            "name": "clawbackReceiver",
+            "name": "activationPoint",
             "docs": [
-              "Clawback receiver"
+              "this merkle tree is activated from this slot or timestamp"
             ],
-            "type": "publicKey"
+            "type": "u64"
           },
           {
-            "name": "admin",
+            "name": "activationType",
             "docs": [
-              "Admin wallet"
+              "activation type, 0 means slot, 1 means timestamp"
             ],
-            "type": "publicKey"
+            "type": "u8"
+          },
+          {
+            "name": "claimType",
+            "docs": [
+              "claim type"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
           },
           {
             "name": "clawedBack",
             "docs": [
               "Whether or not the distributor has been clawed back"
             ],
-            "type": "bool"
-          },
-          {
-            "name": "enableSlot",
-            "docs": [
-              "this merkle tree is enable from this slot"
-            ],
-            "type": "u64"
+            "type": "u8"
           },
           {
             "name": "closable",
             "docs": [
               "indicate that whether admin can close this pool, for testing purpose"
             ],
-            "type": "bool"
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "Padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                3
+              ]
+            }
           },
           {
             "name": "airdropBonus",
-            "docs": [
-              "bonus multiplier"
-            ],
             "type": {
               "defined": "AirdropBonus"
-            }
-          },
-          {
-            "name": "buffer0",
-            "docs": [
-              "Buffer 0"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
-          },
-          {
-            "name": "buffer1",
-            "docs": [
-              "Buffer 1"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "buffer2",
-            "docs": [
-              "Buffer 2"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]
@@ -2074,6 +2324,79 @@ export const IDL: MerkleDistributor = {
     }
   ],
   "types": [
+    {
+      "name": "NewDistributorParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u64"
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "totalClaim",
+            "type": "u64"
+          },
+          {
+            "name": "maxNumNodes",
+            "type": "u64"
+          },
+          {
+            "name": "startVestingTs",
+            "type": "i64"
+          },
+          {
+            "name": "endVestingTs",
+            "type": "i64"
+          },
+          {
+            "name": "clawbackStartTs",
+            "type": "i64"
+          },
+          {
+            "name": "activationPoint",
+            "type": "u64"
+          },
+          {
+            "name": "activationType",
+            "type": "u8"
+          },
+          {
+            "name": "closable",
+            "type": "bool"
+          },
+          {
+            "name": "totalBonus",
+            "type": "u64"
+          },
+          {
+            "name": "bonusVestingDuration",
+            "type": "u64"
+          },
+          {
+            "name": "claimType",
+            "type": "u8"
+          },
+          {
+            "name": "operator",
+            "type": "publicKey"
+          },
+          {
+            "name": "locker",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
     {
       "name": "AirdropBonus",
       "type": {
@@ -2087,7 +2410,7 @@ export const IDL: MerkleDistributor = {
             "type": "u64"
           },
           {
-            "name": "vestingSlotDuration",
+            "name": "vestingDuration",
             "type": "u64"
           },
           {
@@ -2096,6 +2419,46 @@ export const IDL: MerkleDistributor = {
               "total bonus"
             ],
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ActivationType",
+      "docs": [
+        "Type of the activation"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Slot"
+          },
+          {
+            "name": "Timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimType",
+      "docs": [
+        "Type of the activation"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Permissionless"
+          },
+          {
+            "name": "Permissioned"
+          },
+          {
+            "name": "PermissionlessWithStaking"
+          },
+          {
+            "name": "PermissionedWithStaking"
           }
         ]
       }
@@ -2238,6 +2601,41 @@ export const IDL: MerkleDistributor = {
       "code": 6020,
       "name": "CannotCloseClaimStatus",
       "msg": "Cannot close claim status"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidActivationType",
+      "msg": "Invalid activation type"
+    },
+    {
+      "code": 6022,
+      "name": "TypeCastedError",
+      "msg": "Type casted error"
+    },
+    {
+      "code": 6023,
+      "name": "InvalidOperator",
+      "msg": "Invalid operator"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidClaimType",
+      "msg": "Invalid claim type"
+    },
+    {
+      "code": 6025,
+      "name": "SameOperator",
+      "msg": "same operator"
+    },
+    {
+      "code": 6026,
+      "name": "InvalidLocker",
+      "msg": "Invalid locker"
+    },
+    {
+      "code": 6027,
+      "name": "EscrowIsNotMaxLock",
+      "msg": "Escrow is not max lock"
     }
   ]
 };
