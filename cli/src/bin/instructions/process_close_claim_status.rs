@@ -24,7 +24,7 @@ pub fn view_claim_status(args: &Args) {
         .accounts(vec![
             RpcFilterType::DataSize((ClaimStatus::INIT_SPACE) as u64 + 8),
             RpcFilterType::Memcmp(Memcmp::new_raw_bytes(
-                8 + 32 + 8 + 8 + 8,
+                8 + 32 + 32 + 32 + 8 + 8 + 8 + 8,
                 u8::from(true).to_le_bytes().to_vec(),
             )),
         ])
@@ -39,7 +39,7 @@ pub fn process_close_claim_status(args: &Args) {
         .accounts(vec![
             RpcFilterType::DataSize((ClaimStatus::INIT_SPACE) as u64 + 8),
             RpcFilterType::Memcmp(Memcmp::new_raw_bytes(
-                8 + 32 + 8 + 8 + 8,
+                8 + 32 + 32 + 32 + 8 + 8 + 8 + 8,
                 u8::from(true).to_le_bytes().to_vec(),
             )),
         ])
