@@ -23,15 +23,15 @@ pub struct ClaimStatus {
     pub bonus_amount: u64,
     /// indicate that whether admin can close this account, for testing purpose
     pub closable: u8,
-    /// padding
-    pub padding: [u8; 7],
+    /// padding 0
+    pub padding_0: [u8; 7],
+    /// padding 1
+    pub padding_1: u128,
 }
 
-const_assert!(ClaimStatus::INIT_SPACE <= ClaimStatus::LEN);
+const_assert!(ClaimStatus::INIT_SPACE == 152);
 
 impl ClaimStatus {
-    pub const LEN: usize = 200;
-
     /// Returns amount withdrawable, factoring in unlocked tokens and previous withdraws.
     /// payout is difference between the amount unlocked and the amount withdrawn
     #[allow(clippy::result_large_err)]

@@ -198,6 +198,15 @@ pub struct VerifyArgs {
     // pub bonus_vesting_duration: u64,
     #[clap(long, env)]
     pub bonus_multiplier: u64,
+
+    #[clap(long, env)]
+    pub claim_type: u8,
+
+    #[clap(long, env)]
+    pub operator: Pubkey,
+
+    #[clap(long, env)]
+    pub locker: Pubkey,
 }
 
 // NewDistributor subcommand args

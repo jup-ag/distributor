@@ -122,7 +122,7 @@ pub struct NewDistributor<'info> {
             version.to_le_bytes().as_ref()
         ],
         bump,
-        space = 8 + MerkleDistributor::LEN,
+        space = 8 + MerkleDistributor::INIT_SPACE,
         payer = admin
     )]
     pub distributor: AccountLoader<'info, MerkleDistributor>,

@@ -1,4 +1,5 @@
 use anchor_client::solana_client::rpc_filter::{Memcmp, RpcFilterType};
+use anchor_lang::Space;
 use merkle_distributor::state::claim_status::ClaimStatus;
 
 use crate::*;
@@ -21,9 +22,9 @@ pub fn view_claim_status(args: &Args) {
     let program = args.get_program_client();
     let claim_status_accounts: Vec<(Pubkey, ClaimStatus)> = program
         .accounts(vec![
-            RpcFilterType::DataSize((ClaimStatus::LEN) as u64),
+            RpcFilterType::DataSize((ClaimStatus::INIT_SPACE) as u64 + 8),
             RpcFilterType::Memcmp(Memcmp::new_raw_bytes(
-                8 + 32 + 8 + 8 + 8,
+                8 + 32 + 32 + 32 + 8 + 8 + 8 + 8,
                 u8::from(true).to_le_bytes().to_vec(),
             )),
         ])
@@ -36,9 +37,9 @@ pub fn process_close_claim_status(args: &Args) {
     let program = args.get_program_client();
     let claim_status_accounts: Vec<(Pubkey, ClaimStatus)> = program
         .accounts(vec![
-            RpcFilterType::DataSize((ClaimStatus::LEN) as u64),
+            RpcFilterType::DataSize((ClaimStatus::INIT_SPACE) as u64 + 8),
             RpcFilterType::Memcmp(Memcmp::new_raw_bytes(
-                8 + 32 + 8 + 8 + 8,
+                8 + 32 + 32 + 32 + 8 + 8 + 8 + 8,
                 u8::from(true).to_le_bytes().to_vec(),
             )),
         ])

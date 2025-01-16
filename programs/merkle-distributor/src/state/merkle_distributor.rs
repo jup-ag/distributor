@@ -77,6 +77,8 @@ pub struct MerkleDistributor {
     pub padding_0: [u8; 3],
     // bonus multiplier
     pub airdrop_bonus: AirdropBonus,
+    // padding 2
+    pub padding_2: [u128; 5],
 }
 
 #[zero_copy]
@@ -223,11 +225,7 @@ impl MerkleDistributor {
     }
 }
 
-impl MerkleDistributor {
-    pub const LEN: usize = 460;
-}
-
-const_assert!(MerkleDistributor::INIT_SPACE <= MerkleDistributor::LEN);
+const_assert!(MerkleDistributor::INIT_SPACE == 440);
 
 pub struct MerkleDistributorSigner {
     base: [u8; 32],
