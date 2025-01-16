@@ -71,10 +71,11 @@ pub fn process_verify(args: &Args, verfify_args: &VerifyArgs) {
             verfify_args.activation_point
         );
 
-        // assert_eq!(
-        //     merke_tree_state.airdrop_bonus.vesting_slot_duration,
-        //     verfify_args.bonus_vesting_duration
-        // );
+        assert_eq!(merke_tree_state.operator, verfify_args.operator);
+
+        assert_eq!(merke_tree_state.claim_type, verfify_args.claim_type);
+
+        assert_eq!(merke_tree_state.locker, verfify_args.locker);
 
         let clawback_receiver =
             get_associated_token_address(&verfify_args.clawback_receiver_owner, &args.mint);

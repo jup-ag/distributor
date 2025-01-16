@@ -37,7 +37,7 @@ pub struct NewClaim<'info> {
             distributor.key().to_bytes().as_ref()
         ],
         bump,
-        space = 8 + ClaimStatus::LEN,
+        space = 8 + ClaimStatus::INIT_SPACE,
         payer = claimant,
     )]
     pub claim_status: AccountLoader<'info, ClaimStatus>,
