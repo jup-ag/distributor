@@ -3,7 +3,8 @@ members = [
     "cli",
     "merkle-tree",
     "programs/*",
-    "verify"
+    "verify",
+    "api"
 ]
 resolver = "2"
 
