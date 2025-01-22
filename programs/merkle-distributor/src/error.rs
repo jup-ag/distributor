@@ -59,4 +59,8 @@ pub enum ErrorCode {
     InvalidLocker,
     #[msg("Escrow is not max lock")]
     EscrowIsNotMaxLock,
+    #[msg("Invalid remaining accounts")]
+    InvalidRemainingAccounts,
+    #[msg("Invalid account")]
+    InvalidAccount,
 }

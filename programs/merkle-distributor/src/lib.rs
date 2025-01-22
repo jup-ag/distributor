@@ -38,11 +38,23 @@ pub mod merkle_distributor {
 
     /// ADMIN FUNCTIONS ////
     #[allow(clippy::result_large_err)]
+    pub fn new_parent_account(ctx: Context<NewParentAccount>) -> Result<()> {
+        handle_new_parent_account(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
     pub fn new_distributor(
         ctx: Context<NewDistributor>,
         params: NewDistributorParams,
     ) -> Result<()> {
         handle_new_distributor(ctx, &params)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn distribute_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, DistributeVault<'info>>,
+    ) -> Result<()> {
+        handle_distribute_vault(ctx)
     }
 
     /// only available in test phase

@@ -45,6 +45,8 @@ pub struct MerkleDistributor {
     pub locker: Pubkey,
     /// operator for signing in permissioned merkle tree
     pub operator: Pubkey,
+    /// parent account use to distribute fund to all distributor
+    pub parent_account: Pubkey,
     /// Version of the airdrop
     pub version: u64,
     /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].
@@ -227,7 +229,7 @@ impl MerkleDistributor {
     }
 }
 
-const_assert!(MerkleDistributor::INIT_SPACE == 448);
+const_assert!(MerkleDistributor::INIT_SPACE == 480);
 
 pub struct MerkleDistributorSigner {
     base: [u8; 32],

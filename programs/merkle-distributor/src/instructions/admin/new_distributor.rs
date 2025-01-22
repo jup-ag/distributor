@@ -30,6 +30,7 @@ pub struct NewDistributorParams {
     pub claim_type: u8,
     pub operator: Pubkey,
     pub locker: Pubkey,
+    pub parent_account: Pubkey,
 }
 
 impl NewDistributorParams {
@@ -200,6 +201,7 @@ pub fn handle_new_distributor(
     distributor.activation_type = params.activation_type;
     distributor.operator = params.operator;
     distributor.locker = params.locker;
+    distributor.parent_account = params.parent_account;
 
     // Note: might get truncated, do not rely on
     msg! {
