@@ -1,4 +1,4 @@
-use solana_program::{hash::hashv, msg};
+use solana_program::hash::hashv;
 
 /// modified version of https://github.com/saber-hq/merkle-distributor/blob/ac937d1901033ecb7fa3b0db22f7b39569c8e052/programs/merkle-distributor/src/merkle_proof.rs#L8
 /// This function deals with verification of Merkle trees (hash trees).
@@ -40,15 +40,7 @@ pub fn verify_partial_merkle(
 ) -> bool {
     let mut current_hash = leaf;
     let mut index = leaf_index;
-    msg!("root: {:?}", root);
-    msg!("leaf: {:?}", leaf);
-    msg!("proof: {:?}", proof);
-    msg!("nodes: {:?}", nodes);
-    msg!("index: {:?}", index);
-    msg!("------------------------------");
     for proof_element in proof.clone().into_iter() {
-        msg!("proof element: {:?}", proof_element);
-        msg!("hash before: {:?}", current_hash);
         if current_hash <= proof_element {
             current_hash = hashv(&[&[1u8], &current_hash, &proof_element]).to_bytes();
         } else {
@@ -56,27 +48,14 @@ pub fn verify_partial_merkle(
         }
 
         index = index.checked_div(2).unwrap();
-        msg!("hash_after: {:?}", current_hash);
-        
-        
     }
-
-    msg!("----end proof element -----");
 
     if proof.len() == 0 {
         index = index.checked_div(2).unwrap()
     }
 
-   
-    msg!("post index: {:?}", index);
-    msg!("bfs index: {:?}", bfs_index(depth as usize, index as usize));
     // Compare current_hash vs partial_nodes[BFS_index(level, index)]
     let expected_hash = nodes[bfs_index(depth as usize, index as usize)];
-
-    msg!(
-        "expect vs current hash: {:?}",
-        current_hash == expected_hash
-    );
     if current_hash != expected_hash {
         return false;
     }
@@ -90,38 +69,14 @@ pub fn verify_partial_merkle(
         curr_level = curr_level.checked_sub(1).unwrap();
     }
 
-    
     while curr_level > 0 {
         // Find sibling
         let sibling_index = curr_index ^ 1;
-        msg!(
-            "current_level: {:?}, current_index: {:?}, sibling_index: {:?}, bfs index: {:?}",
-            curr_level,
-            curr_index,
-            sibling_index,
-            bfs_index(curr_level as usize, sibling_index as usize)
-        );
         let mut sibling_bfs_idx = bfs_index(curr_level as usize, sibling_index as usize);
         if sibling_bfs_idx as usize >= nodes.len() {
             sibling_bfs_idx -= 1;
         }
-        msg!("sib: {:?}", sibling_bfs_idx);
         let sibling_hash = nodes[sibling_bfs_idx];
-
-        msg!(
-            "At level {}, current index: {}, sibling index: {}, BFS Sibling Index: {:?}, siblinh_hash: {:?}",
-            curr_level,
-            curr_index,
-            sibling_index,
-            sibling_bfs_idx,
-            sibling_hash
-        );
-        //
-        // curr_hash = if curr_index % 2 == 0 {
-        //     hashv(&[&[1u8], &curr_hash, &sibling_hash]).to_bytes()
-        // } else {
-        //     hashv(&[&[1u8], &sibling_hash, &curr_hash]).to_bytes()
-        // };
 
         if curr_hash <= sibling_hash {
             curr_hash = hashv(&[&[1u8], &curr_hash, &sibling_hash]).to_bytes();
@@ -131,7 +86,6 @@ pub fn verify_partial_merkle(
 
         curr_level = curr_level.checked_sub(1).unwrap();
         curr_index = curr_index.checked_div(2).unwrap();
-        msg!("parent hash: {:?}", curr_hash);
     }
     curr_hash == root
 }
@@ -141,7 +95,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_verify_partial_merkle_out_of_scope() {
+    fn test_verify_partial_merkle_without_proof() {
         let nodes: Vec<[u8; 32]> = vec![
             [
                 126, 64, 122, 133, 166, 245, 206, 172, 165, 62, 184, 187, 253, 195, 131, 108, 17,
@@ -178,11 +132,11 @@ mod tests {
         ];
         let index = 4;
         let res = verify_partial_merkle(root, leaf, 2, index, proof, nodes);
-        println!("res: {:?}", res);
+        assert!(res)
     }
 
     #[test]
-    fn test_verify_partial_merkle_true() {
+    fn test_verify_partial_merkle() {
         let nodes: Vec<[u8; 32]> = vec![
             [
                 157, 203, 83, 31, 9, 208, 192, 3, 201, 46, 165, 112, 246, 35, 115, 158, 64, 177,
@@ -232,6 +186,6 @@ mod tests {
         ];
         let index = 3;
         let res = verify_partial_merkle(root, leaf, 2, index, proof, nodes);
-        println!("res: {:?}", res);
+        assert!(res);
     }
 }
