@@ -29,8 +29,6 @@ pub enum ClaimType {
 #[account(zero_copy)]
 #[derive(Default, Debug, InitSpace)]
 pub struct MerkleDistributor {
-    /// The 256-bit merkle root.
-    pub root: [u8; 32],
     /// [Mint] of the token to be distributed.
     pub mint: Pubkey,
     /// base key of distributor.
@@ -45,8 +43,10 @@ pub struct MerkleDistributor {
     pub locker: Pubkey,
     /// operator for signing in permissioned merkle tree
     pub operator: Pubkey,
-    /// parent account use to distribute fund to all distributor
+    /// Parent account use to distribute fund to all distributor
     pub parent_account: Pubkey,
+    /// Partial merkle tree account
+    pub partial_merkle_tree: Pubkey,
     /// Version of the airdrop
     pub version: u64,
     /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].

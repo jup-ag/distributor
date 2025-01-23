@@ -104,8 +104,9 @@ pub mod merkle_distributor {
         amount_unlocked: u64,
         amount_locked: u64,
         proof: Vec<[u8; 32]>,
+        initial_index: u8,
     ) -> Result<()> {
-        handle_new_claim(ctx, amount_unlocked, amount_locked, proof)
+        handle_new_claim(ctx, amount_unlocked, amount_locked, proof, initial_index)
     }
 
     #[allow(clippy::result_large_err)]
@@ -119,8 +120,9 @@ pub mod merkle_distributor {
         amount_unlocked: u64,
         amount_locked: u64,
         proof: Vec<[u8; 32]>,
+        initial_index: u8,
     ) -> Result<()> {
-        handle_new_claim_and_stake(ctx, amount_unlocked, amount_locked, proof)
+        handle_new_claim_and_stake(ctx, amount_unlocked, amount_locked, proof, initial_index)
     }
 
     #[allow(clippy::result_large_err)]

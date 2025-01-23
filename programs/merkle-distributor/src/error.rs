@@ -63,4 +63,6 @@ pub enum ErrorCode {
     InvalidRemainingAccounts,
     #[msg("Invalid account")]
     InvalidAccount,
+    #[msg("testlog")]
+    TestLog,
 }

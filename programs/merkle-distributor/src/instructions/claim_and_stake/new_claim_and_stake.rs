@@ -1,3 +1,4 @@
+use crate::state::partial_merkle_tree::PartialMerkleTree;
 use crate::LEAF_PREFIX;
 use crate::{
     error::ErrorCode,
@@ -11,7 +12,7 @@ use anchor_lang::{
     Key, Result,
 };
 use anchor_spl::token::{Token, TokenAccount};
-use jito_merkle_verify::verify;
+use jito_merkle_verify::verify_partial_merkle;
 
 use locked_voter::program::LockedVoter as Voter;
 use locked_voter::{self as voter, Escrow, Locker};
@@ -22,6 +23,10 @@ pub struct NewClaimAndStake<'info> {
     /// The [MerkleDistributor].
     #[account(mut, has_one = locker)]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
+
+    /// The [PartialMerkleTree].
+    #[account(has_one = distributor)]
+    pub partial_merkle_tree: Account<'info, PartialMerkleTree>,
 
     /// Claim status PDA
     #[account(
@@ -91,9 +96,10 @@ pub fn handle_new_claim_and_stake(
     amount_unlocked: u64,
     amount_locked: u64,
     proof: Vec<[u8; 32]>,
+    initial_index: u8,
 ) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;
-
+    let partial_merkle_tree = &ctx.accounts.partial_merkle_tree;
     require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
 
     // check operator
@@ -126,11 +132,15 @@ pub fn handle_new_claim_and_stake(
 
     let node = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
 
-    require!(
-        verify(proof, distributor.root, node.to_bytes()),
-        ErrorCode::InvalidProof
+    let verify_res = verify_partial_merkle(
+        partial_merkle_tree.root,
+        node.to_bytes(),
+        partial_merkle_tree.depth,
+        initial_index,
+        proof,
+        partial_merkle_tree.nodes.clone(),
     );
-
+    require!(verify_res, ErrorCode::InvalidProof);
     let mut claim_status = ctx.accounts.claim_status.load_init()?;
 
     // Seed initial values

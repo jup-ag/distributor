@@ -1,5 +1,6 @@
 use crate::error::ErrorCode::ArithmeticError;
 use crate::state::merkle_distributor::{ActivationType, ClaimType};
+use crate::state::partial_merkle_tree::PartialMerkleTree;
 use crate::{
     error::ErrorCode,
     state::merkle_distributor::{AirdropBonus, MerkleDistributor},
@@ -13,10 +14,13 @@ const SECONDS_PER_DAY: i64 = 0;
 #[cfg(not(feature = "localnet"))]
 const SECONDS_PER_DAY: i64 = 24 * 3600; // 24 hours * 3600 seconds
 
-#[derive(AnchorSerialize, AnchorDeserialize, InitSpace)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug)]
 pub struct NewDistributorParams {
     pub version: u64,
     pub root: [u8; 32],
+    pub total_nodes: u8,
+    pub depth: u8,
+    pub nodes: Vec<[u8; 32]>,
     pub total_claim: u64,
     pub max_num_nodes: u64,
     pub start_vesting_ts: i64,
@@ -111,7 +115,7 @@ impl NewDistributorParams {
 }
 /// Accounts for [merkle_distributor::handle_new_distributor].
 #[derive(Accounts)]
-#[instruction(version: u64)]
+#[instruction(version: u64, total_node: u8)]
 pub struct NewDistributor<'info> {
     /// [MerkleDistributor].
     #[account(
@@ -127,6 +131,19 @@ pub struct NewDistributor<'info> {
         payer = admin
     )]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
+
+    /// [MerkleDistributor].
+    #[account(
+        init,
+        seeds = [
+            b"PartialMerkleTree".as_ref(),
+            distributor.key().to_bytes().as_ref(),
+        ],
+        bump,
+        space = PartialMerkleTree::space(total_node as usize),
+        payer = admin
+    )]
+    pub partial_merkle_tree: Account<'info, PartialMerkleTree>,
 
     /// Base key of the distributor.
     pub base: Signer<'info>,
@@ -173,12 +190,10 @@ pub fn handle_new_distributor(
     params: &NewDistributorParams,
 ) -> Result<()> {
     params.validate()?;
-
     let mut distributor = ctx.accounts.distributor.load_init()?;
-
+    let partial_merkle_tree = &mut ctx.accounts.partial_merkle_tree;
     distributor.bump = *ctx.bumps.get("distributor").unwrap();
     distributor.version = params.version;
-    distributor.root = params.root;
     distributor.mint = ctx.accounts.mint.key();
     distributor.token_vault = ctx.accounts.token_vault.key();
     distributor.max_total_claim = params.get_max_total_claim()?;
@@ -202,6 +217,14 @@ pub fn handle_new_distributor(
     distributor.operator = params.operator;
     distributor.locker = params.locker;
     distributor.parent_account = params.parent_account;
+    distributor.partial_merkle_tree = partial_merkle_tree.key();
+
+    // partial merkle tree
+    partial_merkle_tree.total_nodes = params.total_nodes;
+    partial_merkle_tree.root = params.root;
+    partial_merkle_tree.depth = params.depth;
+    partial_merkle_tree.nodes = params.nodes.clone();
+    partial_merkle_tree.distributor = ctx.accounts.distributor.key();
 
     // Note: might get truncated, do not rely on
     msg! {

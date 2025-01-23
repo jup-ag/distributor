@@ -3,10 +3,15 @@ import { sha256 } from "js-sha256";
 
 import { MerkleTree } from "./merkle-tree";
 
-
 export class BalanceTree {
   private readonly _tree: MerkleTree;
-  constructor(balances: { account: web3.PublicKey; amountUnlocked: BN, amountLocked: BN }[]) {
+  constructor(
+    balances: {
+      account: web3.PublicKey;
+      amountUnlocked: BN;
+      amountLocked: BN;
+    }[]
+  ) {
     this._tree = new MerkleTree(
       balances.map(({ account, amountUnlocked, amountLocked }, index) => {
         return BalanceTree.toNode(account, amountUnlocked, amountLocked);
@@ -30,7 +35,11 @@ export class BalanceTree {
   }
 
   // keccak256(abi.encode(index, account, amount))
-  static toNode(account: web3.PublicKey, amountUnlocked: BN, amountLocked: BN): Buffer {
+  static toNode(
+    account: web3.PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN
+  ): Buffer {
     const buf = Buffer.concat([
       account.toBuffer(),
       new BN(amountUnlocked).toArrayLike(Buffer, "le", 8),
@@ -38,12 +47,17 @@ export class BalanceTree {
     ]);
 
     const hashedBuff = Buffer.from(sha256(buf), "hex");
-    const bufWithPrefix = Buffer.concat([
-      Buffer.from([0]),
-      hashedBuff
-    ]);
+    const bufWithPrefix = Buffer.concat([Buffer.from([0]), hashedBuff]);
 
     return Buffer.from(sha256(bufWithPrefix), "hex");
+  }
+
+  getPartialTree(depth: number): Buffer[][] {
+    return this._tree.getPartialTree(depth);
+  }
+
+  getPartialBfsTree(depth: number): Buffer[] {
+    return this._tree.getPartialBfsTree(depth);
   }
 
   getHexRoot(): string {
@@ -51,15 +65,39 @@ export class BalanceTree {
   }
 
   // returns the hex bytes32 values of the proof
-  getHexProof(account: web3.PublicKey, amountUnlocked: BN, amountLocked: BN): string[] {
-    return this._tree.getHexProof(BalanceTree.toNode(account, amountUnlocked, amountLocked));
+  getHexProof(
+    account: web3.PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN
+  ): string[] {
+    return this._tree.getHexProof(
+      BalanceTree.toNode(account, amountUnlocked, amountLocked)
+    );
   }
 
   getRoot(): Buffer {
     return this._tree.getRoot();
   }
 
-  getProof(account: web3.PublicKey, amountUnlocked: BN, amountLocked: BN): Buffer[] {
-    return this._tree.getProof(BalanceTree.toNode(account, amountUnlocked, amountLocked));
+  getProof(
+    account: web3.PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN
+  ): Buffer[] {
+    return this._tree.getProof(
+      BalanceTree.toNode(account, amountUnlocked, amountLocked)
+    );
+  }
+
+  getPartialProof(
+    account: web3.PublicKey,
+    amountUnlocked: BN,
+    amountLocked: BN,
+    depth: number
+  ): { proof: Buffer[]; index: number } {
+    return this._tree.getPartialProof(
+      BalanceTree.toNode(account, amountUnlocked, amountLocked),
+      depth
+    );
   }
 }

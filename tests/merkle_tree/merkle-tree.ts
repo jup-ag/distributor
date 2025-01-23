@@ -1,5 +1,6 @@
 import { sha256 } from "js-sha256";
 import invariant from "tiny-invariant";
+import fs from "fs";
 
 function getPairElement(idx: number, layer: Buffer[]): Buffer | null {
   const pairIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
@@ -28,7 +29,10 @@ function bufArrToHexArr(arr: Buffer[]): string[] {
 }
 
 function sortAndConcat(...args: Buffer[]): Buffer {
-  return Buffer.concat([Buffer.from([1]), Buffer.concat([...args].sort(Buffer.compare.bind(null)))]);
+  return Buffer.concat([
+    Buffer.from([1]),
+    Buffer.concat([...args].sort(Buffer.compare.bind(null))),
+  ]);
 }
 
 export class MerkleTree {
@@ -99,6 +103,74 @@ export class MerkleTree {
     return Buffer.from(sha256(sortAndConcat(first, second)), "hex");
   }
 
+  getPartialTree(depth: number): Buffer[][] {
+    const newLayer = [...this._layers];
+    return newLayer.reverse().slice(1, depth);
+  }
+
+  getPartialBfsTree(depth: number): Buffer[] {
+    if (depth < 1) {
+      throw new Error("Depth must be at least 1");
+    }
+
+    const nodes: Buffer[] = [];
+    const queue: { node: Buffer; layer: number }[] = [];
+
+    // Start with the root node
+    const root = this.getRoot();
+    queue.push({ node: root, layer: this._layers.length - 1 });
+
+    while (queue.length > 0) {
+      const { node, layer } = queue.shift()!;
+
+      // Add the current node to the nodes array
+      nodes.push(node);
+
+      // If we've reached the desired depth, don't enqueue children
+      if (this._layers.length - layer >= depth) {
+        continue;
+      }
+
+      // Calculate the index of the current node in its layer
+      const currentLayer = this._layers[layer];
+      const nodeIndex = currentLayer.findIndex((el) => el.equals(node));
+
+      if (nodeIndex === -1) {
+        throw new Error("Node not found in its layer");
+      }
+
+      // Calculate indices of child nodes in the layer below
+      const childLayer = layer - 1;
+      if (childLayer < 0) {
+        // Reached the leaves
+        continue;
+      }
+
+      const leftChildIdx = nodeIndex * 2;
+      const rightChildIdx = leftChildIdx + 1;
+
+      const childLayerElements = this._layers[childLayer];
+
+      if (leftChildIdx < childLayerElements.length) {
+        queue.push({
+          node: childLayerElements[leftChildIdx],
+          layer: childLayer,
+        });
+      }
+
+      if (rightChildIdx < childLayerElements.length) {
+        queue.push({
+          node: childLayerElements[rightChildIdx],
+          layer: childLayer,
+        });
+      }
+    }
+
+    // Dont use root
+    nodes.shift();
+    return nodes;
+  }
+
   getRoot(): Buffer {
     const root = this._layers[this._layers.length - 1]?.[0];
     invariant(root, "root");
@@ -111,7 +183,6 @@ export class MerkleTree {
 
   getProof(el: Buffer): Buffer[] {
     const initialIdx = this._bufferElementPositionIndex[el.toString("hex")];
-
     if (typeof initialIdx !== "number") {
       throw new Error("Element does not exist in Merkle tree");
     }
@@ -119,15 +190,39 @@ export class MerkleTree {
     let idx = initialIdx;
     return this._layers.reduce((proof, layer) => {
       const pairElement = getPairElement(idx, layer);
-
       if (pairElement) {
         proof.push(pairElement);
       }
 
       idx = Math.floor(idx / 2);
-
       return proof;
     }, []);
+  }
+
+  getPartialProof(
+    el: Buffer,
+    depth: number
+  ): { proof: Buffer[]; index: number } {
+    const initialIdx = this._bufferElementPositionIndex[el.toString("hex")];
+
+    if (typeof initialIdx !== "number") {
+      throw new Error("Element does not exist in Merkle tree");
+    }
+
+    let idx = initialIdx;
+    const proof = this._layers
+      .slice(0, this._layers.length - depth)
+      .reduce((proof, layer) => {
+        const pairElement = getPairElement(idx, layer);
+        if (pairElement) {
+          proof.push(pairElement);
+        }
+
+        idx = Math.floor(idx / 2);
+        return proof;
+      }, []);
+
+    return { proof, index: initialIdx };
   }
 
   getHexProof(el: Buffer): string[] {

@@ -6,13 +6,13 @@ use anchor_spl::{
     token,
     token::{Token, TokenAccount},
 };
-use jito_merkle_verify::verify;
+use jito_merkle_verify::verify_partial_merkle;
 
 use crate::{
     error::ErrorCode,
     state::{
         claim_status::ClaimStatus, claimed_event::NewClaimEvent,
-        merkle_distributor::MerkleDistributor,
+        merkle_distributor::MerkleDistributor, partial_merkle_tree::PartialMerkleTree,
     },
 };
 
@@ -27,6 +27,10 @@ pub struct NewClaim<'info> {
     /// The [MerkleDistributor].
     #[account(mut)]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
+
+    /// The [PartialMerkleTree].
+    #[account(has_one = distributor)]
+    pub partial_merkle_tree: Account<'info, PartialMerkleTree>,
 
     /// Claim status PDA
     #[account(
@@ -85,9 +89,10 @@ pub fn handle_new_claim(
     amount_unlocked: u64,
     amount_locked: u64,
     proof: Vec<[u8; 32]>,
+    initial_index: u8,
 ) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;
-
+    let partial_merkle_tree = &ctx.accounts.partial_merkle_tree;
     require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
 
     // check operator
@@ -117,10 +122,15 @@ pub fn handle_new_claim(
 
     let node = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
 
-    require!(
-        verify(proof, distributor.root, node.to_bytes()),
-        ErrorCode::InvalidProof
+    let verify_res = verify_partial_merkle(
+        partial_merkle_tree.root,
+        node.to_bytes(),
+        partial_merkle_tree.depth,
+        initial_index,
+        proof,
+        partial_merkle_tree.nodes.clone(),
     );
+    require!(verify_res, ErrorCode::InvalidProof);
 
     let mut claim_status = ctx.accounts.claim_status.load_init()?;
 
