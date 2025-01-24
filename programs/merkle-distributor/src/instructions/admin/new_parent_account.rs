@@ -1,6 +1,6 @@
 use crate::state::parent_account::ParentAccount;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{Mint, TokenAccount};
 
 #[derive(Accounts)]
 pub struct NewParentAccount<'info> {
@@ -35,9 +35,6 @@ pub struct NewParentAccount<'info> {
 
     /// The [System] program.
     pub system_program: Program<'info, System>,
-
-    /// The [Token] program.
-    pub token_program: Program<'info, Token>,
 }
 
 pub fn handle_new_parent_account(ctx: Context<NewParentAccount>) -> Result<()> {

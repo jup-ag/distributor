@@ -115,8 +115,7 @@ export async function createNewParentAccount(
       parentVault,
       mint,
       admin: admin.publicKey,
-      systemProgram: web3.SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: web3.SystemProgram.programId
     })
     .rpc()
     .catch(console.log)
