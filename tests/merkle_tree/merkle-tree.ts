@@ -1,6 +1,5 @@
 import { sha256 } from "js-sha256";
 import invariant from "tiny-invariant";
-import fs from "fs";
 
 function getPairElement(idx: number, layer: Buffer[]): Buffer | null {
   const pairIdx = idx % 2 === 0 ? idx + 1 : idx - 1;

@@ -16,7 +16,7 @@ use crate::{
 #[derive(Accounts)]
 pub struct DistributeVault<'info> {
     /// The [ParentState].
-    #[account(mut, has_one = admin)]
+    #[account(has_one = admin)]
     pub parent_account: AccountLoader<'info, ParentAccount>,
 
     /// Parent vault containing the tokens to distribute to distributor vault.
@@ -50,7 +50,7 @@ pub struct DistributeVault<'info> {
 pub fn handle_distribute_vault<'info>(
     ctx: Context<'_, '_, '_, 'info, DistributeVault<'info>>,
 ) -> Result<()> {
-    let mut parent_account = ctx.accounts.parent_account.load_mut()?;
+    let parent_account = ctx.accounts.parent_account.load()?;
     let signer = parent_account.signer();
     let seeds = signer.seeds();
 
@@ -112,12 +112,7 @@ pub fn handle_distribute_vault<'info>(
             amount_transfer,
             distributor_state.version
         );
-
-        // Accumulate distributed token amount
-        parent_account.accumulate_distribution(amount_transfer)?;
     }
-
-    drop(parent_account);
 
     Ok(())
 }

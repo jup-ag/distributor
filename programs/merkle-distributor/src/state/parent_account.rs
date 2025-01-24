@@ -1,8 +1,6 @@
 use anchor_lang::prelude::*;
 use static_assertions::const_assert;
 
-use crate::math::SafeMath;
-
 /// Parent Account: Authority of parent vault use to distribute fund to all distributors
 #[account(zero_copy)]
 #[derive(Default, InitSpace)]
@@ -17,8 +15,8 @@ pub struct ParentAccount {
     pub mint: Pubkey,
     /// Token Address of parent vault
     pub parent_vault: Pubkey,
-    /// Total value distributed to distributor vault
-    pub total_distributed: u64,
+    /// Padding
+    pub padding: u64,
     /// Buffer for future use or alignment.
     pub buffer: [u128; 5]
 }
@@ -33,11 +31,6 @@ impl ParentAccount {
             mint: self.mint.to_bytes(),
             bump: [self.bump],
         }
-    }
-
-    pub fn accumulate_distribution(&mut self, amount: u64) -> Result<()> {
-        self.total_distributed = self.total_distributed.safe_add(amount)?;
-        Ok(())
     }
 }
 

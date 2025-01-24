@@ -1,5 +1,10 @@
 import fs from "fs";
-import { ComputeBudgetProgram, Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  ComputeBudgetProgram,
+  Keypair,
+  PublicKey,
+  AccountMeta,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import { AnchorProvider, Program, Wallet, web3 } from "@coral-xyz/anchor";
 import {
@@ -113,11 +118,33 @@ export async function createNewParentAccount(
       systemProgram: web3.SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
-    .preInstructions([
-      ComputeBudgetProgram.setComputeUnitLimit({
-        units: 400_000,
-      }),
-    ])
+    .rpc()
+    .catch(console.log)
+    .then(console.log);
+
+  return { parentAccount, parentVault };
+}
+
+export interface DistributeVaultParams {
+  admin: Keypair;
+  parentAccount: PublicKey,
+  parentVault: PublicKey,
+  remainingAccounts: AccountMeta[];
+}
+
+export async function distributeVault(params: DistributeVaultParams) {
+  let { admin, remainingAccounts, parentAccount, parentVault } = params;
+  const program = createDistributorProgram(new Wallet(admin));
+
+  await program.methods
+    .distributeVault()
+    .accounts({
+      parentAccount,
+      parentVault,
+      admin: admin.publicKey,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .remainingAccounts(remainingAccounts)
     .rpc()
     .catch(console.log)
     .then(console.log);
@@ -229,10 +256,6 @@ export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
     .catch(console.log)
     .then(console.log);
 
-  // const partialTree = await program.account.partialMerkleTree.fetch(
-  //   partialMerkleTree
-  // );
-  // console.log(partialTree);
   return { distributor, tokenVault };
 }
 
@@ -346,7 +369,7 @@ export async function claimAndStake(params: ClaimAndStakeParams) {
     distributor,
     operator,
     escrow,
-    initialIndex
+    initialIndex,
   } = params;
   const program = createDistributorProgram(new Wallet(claimant));
 

@@ -1,35 +1,36 @@
 import * as anchor from "@coral-xyz/anchor";
 import { BalanceTree } from "./merkle_tree";
-import { Wallet, web3 } from "@coral-xyz/anchor";
+import { web3 } from "@coral-xyz/anchor";
 import {
   ADMIN,
-  claim,
-  claimLocked,
-  clawBack,
   createNewDistributor,
+  createNewParentAccount,
+  distributeVault,
 } from "./merkle_distributor";
 import {
   createAndFundWallet,
   getBlockTime,
   getOrCreateAssociatedTokenAccountWrap,
   getRandomInt,
-  sleep,
 } from "./common";
 import { BN } from "bn.js";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
 import { createMint, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { assert } from "console";
 const provider = anchor.AnchorProvider.env();
 
-describe("Claim permissionless", () => {
+describe("Distribution vault", () => {
   let admin = Keypair.generate();
   let tree: BalanceTree;
   let maxNumNodes = 5;
+  let numDistributor = 5;
   let whitelistedKPs: web3.Keypair[] = [];
   let amountUnlockedArr: anchor.BN[] = [];
   let amountLockedArr: anchor.BN[] = [];
   let totalClaim = new BN(0);
   let mint: PublicKey;
   let sliceLayers = 3;
+  let ONE_DAY = 86_400;
 
   before(async () => {
     await createAndFundWallet(provider.connection, ADMIN);
@@ -72,11 +73,11 @@ describe("Claim permissionless", () => {
   it("Full flow", async () => {
     console.log("create distributor");
     let currentTime = await getBlockTime(provider.connection);
-    let startVestingTs = new BN(currentTime + 3);
-    let endVestingTs = new BN(currentTime + 6);
-    let clawbackStartTs = new BN(currentTime + 7);
+    let startVestingTs = new BN(currentTime + ONE_DAY);
+    let endVestingTs = new BN(currentTime + ONE_DAY * 7);
+    let clawbackStartTs = new BN(currentTime + ONE_DAY * 8);
     let activationType = 1; // timestamp
-    let activationPoint = new BN(currentTime + 2);
+    let activationPoint = new BN(currentTime + ONE_DAY / 2);
     let closable = false;
     let totalBonus = new BN(0);
     let bonusVestingDuration = new BN(0);
@@ -96,103 +97,93 @@ describe("Claim permissionless", () => {
       mint,
       ADMIN.publicKey
     );
-    let { distributor, tokenVault } = await createNewDistributor({
+
+    let { parentAccount, parentVault } = await createNewParentAccount({
       admin,
-      version: 0,
-      root: tree.getRoot(),
-      depth: sliceLayers - 1,
-      nodes,
-      totalNodes: nodes.length,
-      totalClaim,
-      maxNumNodes: new BN(maxNumNodes),
-      startVestingTs,
-      endVestingTs,
-      clawbackStartTs,
-      activationPoint,
-      activationType,
-      closable,
-      totalBonus,
-      bonusVestingDuration,
-      claimType,
-      operator,
-      locker,
       mint,
-      clawbackReceiver,
     });
+
     // mint
+    const totalClaimForDistributors = totalClaim.toNumber() * numDistributor;
     await mintTo(
       provider.connection,
       ADMIN,
       mint,
-      tokenVault,
+      parentVault,
       ADMIN,
-      totalClaim.toNumber()
+      totalClaimForDistributors
     );
+    const preParentVaultBalance = Number(
+      (await provider.connection.getTokenAccountBalance(parentVault)).value
+        .amount
+    );
+    assert(totalClaimForDistributors == preParentVaultBalance);
 
-    while (true) {
-      const currentTime = await getBlockTime(provider.connection);
-      if (currentTime > activationPoint.toNumber()) {
-        break;
-      } else {
-        await sleep(1000);
-        console.log("Wait until activationPoint");
-      }
-    }
+    let remainingAccounts: AccountMeta[] = [];
 
-    console.log("-------------claim--------------");
-    for (let i = 0; i < maxNumNodes - 1; i++) {
-      var proofBuffers = tree.getPartialProof(
-        whitelistedKPs[i].publicKey,
-        amountUnlockedArr[i],
-        amountLockedArr[i],
-        sliceLayers
-      );
-      let proof = [];
-      proofBuffers.proof.forEach(function (value) {
-        proof.push(Array.from(new Uint8Array(value)));
+    for (let i = 0; i < numDistributor; i++) {
+      let { distributor, tokenVault } = await createNewDistributor({
+        admin,
+        version: 0,
+        root: tree.getRoot(),
+        depth: sliceLayers - 1,
+        nodes,
+        totalNodes: nodes.length,
+        totalClaim,
+        maxNumNodes: new BN(maxNumNodes),
+        startVestingTs,
+        endVestingTs,
+        clawbackStartTs,
+        activationPoint,
+        activationType,
+        closable,
+        totalBonus,
+        bonusVestingDuration,
+        claimType,
+        operator,
+        locker,
+        mint,
+        clawbackReceiver,
       });
-      console.log("claim index: ", i);
-      await claim({
-        distributor,
-        claimant: whitelistedKPs[i],
-        amountUnlocked: amountUnlockedArr[i],
-        amountLocked: amountLockedArr[i],
-        proof,
-        initialIndex: proofBuffers.index,
-      });
+
+      // remaining account
+      const accounts: AccountMeta[] = [
+        {
+          pubkey: tokenVault,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: distributor,
+          isSigner: false,
+          isWritable: false,
+        },
+      ];
+      remainingAccounts.push(...accounts);
     }
 
-    while (true) {
-      const currentTime = await getBlockTime(provider.connection);
-      if (currentTime > startVestingTs.toNumber()) {
-        break;
-      } else {
-        await sleep(1000);
-        console.log("Wait until startVestingTs");
-      }
-    }
-    console.log("claim locked");
-    for (let i = 0; i < maxNumNodes - 1; i++) {
-      console.log("claim locked index: ", i);
-      await claimLocked({
-        distributor,
-        claimant: whitelistedKPs[i],
-      });
-    }
+    console.log("Distribute vault");
 
-    while (true) {
-      const currentTime = await getBlockTime(provider.connection);
-      if (currentTime > clawbackStartTs.toNumber()) {
-        break;
-      } else {
-        await sleep(1000);
-        console.log("Wait until clawbackStartTs");
-      }
-    }
-    console.log("clawback");
-    await clawBack({
-      distributor,
-      payer: ADMIN,
+    let _ = await distributeVault({
+      admin,
+      parentAccount,
+      parentVault,
+      remainingAccounts,
     });
+
+    // post distribution
+    const postParentVaultBalance = Number(
+      (await provider.connection.getTokenAccountBalance(parentVault)).value
+        .amount
+    );
+    assert(postParentVaultBalance == 0);
+    for (let i = 0; i < remainingAccounts.length; i += 2) {
+      const tokenVault = remainingAccounts[i].pubkey;
+      const tokenVaultBalance = Number(
+        (await provider.connection.getTokenAccountBalance(tokenVault)).value
+          .amount
+      );
+      assert(tokenVaultBalance == totalClaim.toNumber());
+    }
   });
 });
