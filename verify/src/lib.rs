@@ -74,7 +74,7 @@ pub fn verify_partial_merkle(
         let sibling_index = curr_index ^ 1;
         let mut sibling_bfs_idx = bfs_index(curr_level as usize, sibling_index as usize);
         if sibling_bfs_idx as usize >= nodes.len() {
-            sibling_bfs_idx -= 1;
+            sibling_bfs_idx = sibling_bfs_idx.checked_sub(1).unwrap();
         }
         let sibling_hash = nodes[sibling_bfs_idx];
 
