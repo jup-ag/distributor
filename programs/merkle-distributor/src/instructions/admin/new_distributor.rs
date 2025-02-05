@@ -1,11 +1,12 @@
 use crate::error::ErrorCode::ArithmeticError;
+use crate::state::distributor_root::DistributorRoot;
 use crate::state::merkle_distributor::{ActivationType, ClaimType};
-use crate::state::partial_merkle_tree::PartialMerkleTree;
 use crate::{
     error::ErrorCode,
     state::merkle_distributor::{AirdropBonus, MerkleDistributor},
 };
 use anchor_lang::{account, context::Context, prelude::*, Accounts, Key, ToAccountInfo};
+use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[cfg(feature = "localnet")]
@@ -17,10 +18,6 @@ const SECONDS_PER_DAY: i64 = 24 * 3600; // 24 hours * 3600 seconds
 #[derive(AnchorSerialize, AnchorDeserialize, Debug)]
 pub struct NewDistributorParams {
     pub version: u64,
-    pub root: [u8; 32],
-    pub total_nodes: u8,
-    pub depth: u8,
-    pub nodes: Vec<[u8; 32]>,
     pub total_claim: u64,
     pub max_num_nodes: u64,
     pub start_vesting_ts: i64,
@@ -33,8 +30,7 @@ pub struct NewDistributorParams {
     pub bonus_vesting_duration: u64,
     pub claim_type: u8,
     pub operator: Pubkey,
-    pub locker: Pubkey,
-    pub parent_account: Pubkey,
+    pub locker: Pubkey
 }
 
 impl NewDistributorParams {
@@ -128,22 +124,13 @@ pub struct NewDistributor<'info> {
         ],
         bump,
         space = 8 + MerkleDistributor::INIT_SPACE,
-        payer = admin
+        payer = payer
     )]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
 
-    /// [MerkleDistributor].
-    #[account(
-        init,
-        seeds = [
-            b"PartialMerkleTree".as_ref(),
-            distributor.key().to_bytes().as_ref(),
-        ],
-        bump,
-        space = PartialMerkleTree::space(total_node as usize),
-        payer = admin
-    )]
-    pub partial_merkle_tree: Account<'info, PartialMerkleTree>,
+    /// The [DistributorRoot].
+    #[account(mut)]
+    pub distributor_root: AccountLoader<'info, DistributorRoot>,
 
     /// Base key of the distributor.
     pub base: Signer<'info>,
@@ -158,21 +145,29 @@ pub struct NewDistributor<'info> {
     /// Token vault
     /// Should create previously
     #[account(
+        init_if_needed,
         associated_token::mint = mint,
         associated_token::authority=distributor,
+        payer = payer
     )]
     pub token_vault: Account<'info, TokenAccount>,
 
-    /// Admin wallet, responsible for creating the distributor and paying for the transaction.
-    /// Also has the authority to set the clawback receiver and change itself.
+    /// The authority to set the clawback receiver and change itself.
+    /// CHECK: This account is not use to read or write
+    pub admin: UncheckedAccount<'info>,
+
+    /// Payer wallet, responsible for creating the distributor and paying for the transaction.
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     /// The [System] program.
     pub system_program: Program<'info, System>,
 
     /// The [Token] program.
     pub token_program: Program<'info, Token>,
+
+    // Associated token program.
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 /// Creates a new [MerkleDistributor].
@@ -191,7 +186,6 @@ pub fn handle_new_distributor(
 ) -> Result<()> {
     params.validate()?;
     let mut distributor = ctx.accounts.distributor.load_init()?;
-    let partial_merkle_tree = &mut ctx.accounts.partial_merkle_tree;
     distributor.bump = *ctx.bumps.get("distributor").unwrap();
     distributor.version = params.version;
     distributor.mint = ctx.accounts.mint.key();
@@ -216,15 +210,7 @@ pub fn handle_new_distributor(
     distributor.activation_type = params.activation_type;
     distributor.operator = params.operator;
     distributor.locker = params.locker;
-    distributor.parent_account = params.parent_account;
-    distributor.partial_merkle_tree = partial_merkle_tree.key();
-
-    // partial merkle tree
-    partial_merkle_tree.total_nodes = params.total_nodes;
-    partial_merkle_tree.root = params.root;
-    partial_merkle_tree.depth = params.depth;
-    partial_merkle_tree.nodes = params.nodes.clone();
-    partial_merkle_tree.distributor = ctx.accounts.distributor.key();
+    distributor.distributor_root = ctx.accounts.distributor_root.key();
 
     // Note: might get truncated, do not rely on
     msg! {
@@ -244,6 +230,12 @@ pub fn handle_new_distributor(
             distributor.airdrop_bonus.vesting_duration,
             distributor.claim_type,
     };
+
+    drop(distributor);
+
+    // increase total distributor created
+    let mut distributor_root = ctx.accounts.distributor_root.load_mut()?;
+    distributor_root.update_new_distributor()?;
 
     Ok(())
 }

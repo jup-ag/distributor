@@ -13,6 +13,7 @@ import {
 } from "../../target/types/merkle_distributor";
 import { encodeU64, getOrCreateAssociatedTokenAccountWrap } from "../common";
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -45,17 +46,20 @@ export function deriveDistributor(
   return pk;
 }
 
-export function deriveParentAccount(mint: web3.PublicKey) {
+export function deriveDistributorRootAccount(
+  mint: web3.PublicKey,
+  base: web3.PublicKey
+) {
   let [pk, _] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("ParentAccount"), mint.toBuffer()],
+    [Buffer.from("DistributorRoot"), base.toBuffer(), mint.toBuffer()],
     MERKLE_DISTRIBUTOR_PROGRAM_ID
   );
   return pk;
 }
 
-export function derivePartialMerkleTreeAccount(distributor: web3.PublicKey) {
+export function deriveCanopyTreeAccount(distributor: web3.PublicKey) {
   let [pk, _] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("PartialMerkleTree"), distributor.toBuffer()],
+    [Buffer.from("CanopyTree"), distributor.toBuffer()],
     MERKLE_DISTRIBUTOR_PROGRAM_ID
   );
   return pk;
@@ -90,74 +94,51 @@ export function createDistributorProgram(
   return program;
 }
 
-export interface CreateNewParentAccountParams {
+export interface CreateNewDistributorRootParams {
   admin: Keypair;
   mint: PublicKey;
+  maxClaimAmount: BN;
+  maxDistributor: BN;
 }
 
-export async function createNewParentAccount(
-  params: CreateNewParentAccountParams
+export async function createNewDistributorRoot(
+  params: CreateNewDistributorRootParams
 ) {
-  let { admin, mint } = params;
+  console.log("Create distributor root")
+  let { admin, mint, maxClaimAmount, maxDistributor } = params;
   const program = createDistributorProgram(new Wallet(admin));
 
-  let parentAccount = deriveParentAccount(mint);
-  let parentVault = await getOrCreateAssociatedTokenAccountWrap(
+  const base = Keypair.generate();
+  let distributorRoot = deriveDistributorRootAccount(mint, base.publicKey);
+  let distributorRootVault = await getOrCreateAssociatedTokenAccountWrap(
     program.provider.connection,
     admin,
     mint,
-    parentAccount
+    distributorRoot
   );
   await program.methods
-    .newParentAccount()
+    .newDistributorRoot(maxClaimAmount, maxDistributor)
     .accounts({
-      parentAccount,
-      parentVault,
+      distributorRoot,
+      distributorRootVault,
       mint,
+      base: base.publicKey,
       admin: admin.publicKey,
-      systemProgram: web3.SystemProgram.programId
-    })
-    .rpc()
-    .catch(console.log)
-    .then(console.log);
-
-  return { parentAccount, parentVault };
-}
-
-export interface DistributeVaultParams {
-  admin: Keypair;
-  parentAccount: PublicKey,
-  parentVault: PublicKey,
-  remainingAccounts: AccountMeta[];
-}
-
-export async function distributeVault(params: DistributeVaultParams) {
-  let { admin, remainingAccounts, parentAccount, parentVault } = params;
-  const program = createDistributorProgram(new Wallet(admin));
-
-  await program.methods
-    .distributeVault()
-    .accounts({
-      parentAccount,
-      parentVault,
-      admin: admin.publicKey,
+      systemProgram: web3.SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     })
-    .remainingAccounts(remainingAccounts)
+    .signers([base])
     .rpc()
     .catch(console.log)
     .then(console.log);
 
-  return { parentAccount, parentVault };
+  return { distributorRoot, distributorRootVault };
 }
 
 export interface CreateNewDisitrbutorParams {
   admin: Keypair;
   version: number;
-  root: Buffer;
-  depth: number;
-  nodes: Array<number>[];
-  totalNodes: number;
   totalClaim: BN;
   maxNumNodes: BN;
   startVestingTs: BN;
@@ -173,16 +154,13 @@ export interface CreateNewDisitrbutorParams {
   locker: PublicKey;
   mint: PublicKey;
   clawbackReceiver: PublicKey;
+  distributorRoot: PublicKey;
 }
 
 export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
   let {
     admin,
     version,
-    root,
-    depth,
-    nodes,
-    totalNodes,
     totalClaim,
     maxNumNodes,
     startVestingTs,
@@ -198,14 +176,13 @@ export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
     locker,
     mint,
     clawbackReceiver,
+    distributorRoot,
   } = params;
   const program = createDistributorProgram(new Wallet(admin));
 
   let base = Keypair.generate();
 
   let distributor = deriveDistributor(base.publicKey, mint, version);
-  let parentAccount = deriveParentAccount(mint);
-  let partialMerkleTree = derivePartialMerkleTreeAccount(distributor);
   let tokenVault = await getOrCreateAssociatedTokenAccountWrap(
     program.provider.connection,
     admin,
@@ -215,10 +192,6 @@ export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
   await program.methods
     .newDistributor({
       version: new BN(version),
-      root: Array.from(new Uint8Array(root)),
-      depth,
-      nodes: nodes,
-      totalNodes,
       totalClaim,
       maxNumNodes,
       startVestingTs,
@@ -232,11 +205,10 @@ export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
       claimType,
       operator,
       locker,
-      parentAccount,
     })
     .accounts({
       distributor,
-      partialMerkleTree,
+      distributorRoot,
       mint,
       clawbackReceiver,
       tokenVault,
@@ -258,6 +230,114 @@ export async function createNewDistributor(params: CreateNewDisitrbutorParams) {
   return { distributor, tokenVault };
 }
 
+export interface CreateCanopyTreeParams {
+  admin: Keypair;
+  distributor: PublicKey;
+  depth: number;
+  root: number[];
+  canopyNodes: Array<number>[];
+}
+
+export async function createCanopyTree(params: CreateCanopyTreeParams) {
+  console.log("create canopy tree")
+
+  let { admin, distributor, depth, root, canopyNodes } = params;
+  const program = createDistributorProgram(new Wallet(admin));
+  const canopyTree = deriveCanopyTreeAccount(distributor);
+  await program.methods
+    .createCanopyTree(depth, root, canopyNodes)
+    .accounts({
+      canopyTree,
+      distributor,
+      admin: admin.publicKey,
+      systemProgram: web3.SystemProgram.programId,
+    })
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000,
+      }),
+    ])
+    .rpc()
+    .catch(console.log)
+    .then(console.log);
+
+  return canopyTree;
+}
+
+export interface FundDistributorRootParams {
+  admin: Keypair;
+  payer: Keypair;
+  distributorRoot: PublicKey;
+  mint: PublicKey;
+  maxAmount: BN;
+}
+
+export async function fundDistributorRoot(params: FundDistributorRootParams) {
+  console.log("fund to distributor root")
+
+  let { admin, payer, distributorRoot, mint, maxAmount } = params;
+  const program = createDistributorProgram(new Wallet(admin));
+  const distributorRootVault = getAssociatedTokenAddressSync(
+    mint,
+    distributorRoot,
+    true
+  );
+
+  let payerToken = getAssociatedTokenAddressSync(mint, payer.publicKey);
+  await program.methods
+    .fundDistributorRoot(maxAmount)
+    .accounts({
+      distributorRoot,
+      distributorRootVault,
+      mint,
+      payer: payer.publicKey,
+      payerToken,
+      systemProgram: web3.SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+    })
+    .signers([payer])
+    .rpc()
+    .catch(console.log)
+    .then(console.log);
+  return { distributorRoot, distributorRootVault };
+}
+
+export interface FundMerkleDistributorFromRootParams {
+  admin: Keypair;
+  distributorRoot: PublicKey;
+  distributorRootVault: PublicKey;
+  distributor: PublicKey;
+  distributorVault: PublicKey;
+}
+
+export async function fundMerkleDistributorFromRoot(
+  params: FundMerkleDistributorFromRootParams
+) {
+  let {
+    admin,
+    distributorRoot,
+    distributorRootVault,
+    distributorVault,
+    distributor,
+  } = params;
+  const program = createDistributorProgram(new Wallet(admin));
+  await program.methods
+    .fundMerkleDistributorFromRoot()
+    .accounts({
+      distributorRoot,
+      distributorRootVault,
+      distributor,
+      distributorVault,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .rpc()
+    .catch(console.log)
+    .then(console.log);
+
+  return { distributorRoot, distributorRootVault };
+}
+
 export interface ClaimParams {
   claimant: Keypair;
   operator?: Keypair;
@@ -265,7 +345,7 @@ export interface ClaimParams {
   amountUnlocked: BN;
   amountLocked: BN;
   proof: Array<number>[];
-  initialIndex: number;
+  leafIndex: number;
 }
 
 export async function claim(params: ClaimParams) {
@@ -276,14 +356,14 @@ export async function claim(params: ClaimParams) {
     proof,
     distributor,
     operator,
-    initialIndex,
+    leafIndex,
   } = params;
   const program = createDistributorProgram(new Wallet(claimant));
 
   let distributorState = await program.account.merkleDistributor.fetch(
     distributor
   );
-  let partialMerkleTree = derivePartialMerkleTreeAccount(distributor);
+  let canopyTree = deriveCanopyTreeAccount(distributor);
   let claimStatus = deriveClaimStatus(distributor, claimant.publicKey);
   let to = await getOrCreateAssociatedTokenAccountWrap(
     program.provider.connection,
@@ -294,10 +374,10 @@ export async function claim(params: ClaimParams) {
 
   if (operator == null) {
     await program.methods
-      .newClaim(amountUnlocked, amountLocked, proof, initialIndex)
+      .newClaim(amountUnlocked, amountLocked, leafIndex, proof)
       .accounts({
         distributor,
-        partialMerkleTree,
+        canopyTree,
         claimant: claimant.publicKey,
         claimStatus,
         from: distributorState.tokenVault,
@@ -317,10 +397,10 @@ export async function claim(params: ClaimParams) {
   } else {
     // user sign tx firstly (need to verify signature to avoid spaming)
     let tx = await program.methods
-      .newClaim(amountUnlocked, amountLocked, proof, initialIndex)
+      .newClaim(amountUnlocked, amountLocked, leafIndex, proof)
       .accounts({
         distributor,
-        partialMerkleTree,
+        canopyTree,
         claimant: claimant.publicKey,
         claimStatus,
         from: distributorState.tokenVault,
@@ -356,7 +436,7 @@ export interface ClaimAndStakeParams {
   amountUnlocked: BN;
   amountLocked: BN;
   proof: Array<number>[];
-  initialIndex: number;
+  leafIndex: number;
 }
 
 export async function claimAndStake(params: ClaimAndStakeParams) {
@@ -368,22 +448,22 @@ export async function claimAndStake(params: ClaimAndStakeParams) {
     distributor,
     operator,
     escrow,
-    initialIndex,
+    leafIndex,
   } = params;
   const program = createDistributorProgram(new Wallet(claimant));
 
   let distributorState = await program.account.merkleDistributor.fetch(
     distributor
   );
-  let partialMerkleTree = derivePartialMerkleTreeAccount(distributor);
+  let canopyTree = deriveCanopyTreeAccount(distributor);
   let claimStatus = deriveClaimStatus(distributor, claimant.publicKey);
 
   if (operator == null) {
     await program.methods
-      .newClaimAndStake(amountUnlocked, amountLocked, proof, initialIndex)
+      .newClaimAndStake(amountUnlocked, amountLocked, leafIndex, proof)
       .accounts({
         distributor,
-        partialMerkleTree,
+        canopyTree,
         claimant: claimant.publicKey,
         claimStatus,
         from: distributorState.tokenVault,
@@ -409,10 +489,10 @@ export async function claimAndStake(params: ClaimAndStakeParams) {
       .then(console.log);
   } else {
     await program.methods
-      .newClaimAndStake(amountUnlocked, amountLocked, proof, initialIndex)
+      .newClaimAndStake(amountUnlocked, amountLocked, leafIndex, proof)
       .accounts({
         distributor,
-        partialMerkleTree,
+        canopyTree,
         claimant: claimant.publicKey,
         claimStatus,
         from: distributorState.tokenVault,

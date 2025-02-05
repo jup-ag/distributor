@@ -18,7 +18,7 @@ default = []
 localnet = []
 
 [dependencies]
-anchor-lang = "0.28.0"
+anchor-lang = { version = "0.28.0", features = ["init-if-needed"] }
 anchor-spl = "0.28.0"
 bytemuck = "1.14.0"
 jito-merkle-verify = { path = "../../verify" }

@@ -52,14 +52,6 @@ export class BalanceTree {
     return Buffer.from(sha256(bufWithPrefix), "hex");
   }
 
-  getPartialTree(depth: number): Buffer[][] {
-    return this._tree.getPartialTree(depth);
-  }
-
-  getPartialBfsTree(depth: number): Buffer[] {
-    return this._tree.getPartialBfsTree(depth);
-  }
-
   getHexRoot(): string {
     return this._tree.getHexRoot();
   }
@@ -87,6 +79,10 @@ export class BalanceTree {
     return this._tree.getProof(
       BalanceTree.toNode(account, amountUnlocked, amountLocked)
     );
+  }
+
+  getCanopyNodes(depth: number): Buffer[] {
+    return this._tree.getCanopyNodes(depth);
   }
 
   getPartialProof(

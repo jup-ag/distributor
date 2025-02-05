@@ -4,7 +4,7 @@ import { web3 } from "@coral-xyz/anchor";
 import {
   ADMIN,
   createNewDistributor,
-  createNewParentAccount,
+  createNewDistributorRoot,
   distributeVault,
 } from "./merkle_distributor";
 import {
@@ -98,7 +98,7 @@ describe("Distribution vault", () => {
       ADMIN.publicKey
     );
 
-    let { parentAccount, parentVault } = await createNewParentAccount({
+    let { distributorRoot, parentVault } = await createNewDistributorRoot({
       admin,
       mint,
     });
@@ -166,7 +166,7 @@ describe("Distribution vault", () => {
 
     let _ = await distributeVault({
       admin,
-      parentAccount,
+      distributorRoot,
       parentVault,
       remainingAccounts,
     });

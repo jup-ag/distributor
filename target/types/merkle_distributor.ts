@@ -3,24 +3,29 @@ export type MerkleDistributor = {
   "name": "merkle_distributor",
   "instructions": [
     {
-      "name": "newParentAccount",
+      "name": "newDistributorRoot",
       "docs": [
         "ADMIN FUNCTIONS ////"
       ],
       "accounts": [
         {
-          "name": "parentAccount",
+          "name": "distributorRoot",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "[ParentAccount]"
+            "[DistributorRoot]"
           ],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "type": "string",
-                "value": "ParentAccount"
+                "value": "DistributorRoot"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
               },
               {
                 "kind": "account",
@@ -32,12 +37,11 @@ export type MerkleDistributor = {
           }
         },
         {
-          "name": "parentVault",
-          "isMut": false,
+          "name": "distributorRootVault",
+          "isMut": true,
           "isSigner": false,
           "docs": [
-            "Parent vault",
-            "Should create previously"
+            "Distributor root vault"
           ]
         },
         {
@@ -46,6 +50,14 @@ export type MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The mint to distribute."
+          ]
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
           ]
         },
         {
@@ -72,9 +84,98 @@ export type MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "maxClaimAmount",
+          "type": "u64"
+        },
+        {
+          "name": "maxDistributor",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fundDistributorRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]"
+          ],
+          "relations": [
+            "mint"
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer."
+          ]
+        },
+        {
+          "name": "payerToken",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Payer Token Account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxAmount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "newDistributor",
@@ -113,26 +214,12 @@ export type MerkleDistributor = {
           }
         },
         {
-          "name": "partialMerkleTree",
+          "name": "distributorRoot",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "[MerkleDistributor]."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "PartialMerkleTree"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "distributor"
-              }
-            ]
-          }
+            "The [DistributorRoot]."
+          ]
         },
         {
           "name": "base",
@@ -160,7 +247,7 @@ export type MerkleDistributor = {
         },
         {
           "name": "tokenVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "Token vault",
@@ -169,11 +256,18 @@ export type MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -191,6 +285,11 @@ export type MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -203,33 +302,112 @@ export type MerkleDistributor = {
       ]
     },
     {
-      "name": "distributeVault",
+      "name": "createCanopyTree",
       "accounts": [
         {
-          "name": "parentAccount",
+          "name": "canopyTree",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "The [ParentState]."
+            "[CanopyTree]"
           ],
-          "relations": [
-            "admin"
-          ]
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "CanopyTree"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "distributor"
+              }
+            ]
+          }
         },
         {
-          "name": "parentVault",
-          "isMut": true,
+          "name": "distributor",
+          "isMut": false,
           "isSigner": false,
           "docs": [
-            "Parent vault containing the tokens to distribute to distributor vault."
+            "The [MerkleDistributor]."
           ]
         },
         {
           "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
           "isMut": false,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
-            "Admin"
+            "The [System] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "depth",
+          "type": "u8"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "canopyNodes",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fundMerkleDistributorFromRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault containing the tokens to distribute to distributor vault."
+          ]
+        },
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "distributorVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor vault"
           ]
         },
         {
@@ -507,11 +685,11 @@ export type MerkleDistributor = {
           ]
         },
         {
-          "name": "partialMerkleTree",
+          "name": "canopyTree",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "The [PartialMerkleTree]."
+            "The [CanopyTree]."
           ],
           "relations": [
             "distributor"
@@ -604,6 +782,10 @@ export type MerkleDistributor = {
           "type": "u64"
         },
         {
+          "name": "leafIndex",
+          "type": "u32"
+        },
+        {
           "name": "proof",
           "type": {
             "vec": {
@@ -613,10 +795,6 @@ export type MerkleDistributor = {
               ]
             }
           }
-        },
-        {
-          "name": "initialIndex",
-          "type": "u8"
         }
       ]
     },
@@ -702,11 +880,11 @@ export type MerkleDistributor = {
           ]
         },
         {
-          "name": "partialMerkleTree",
+          "name": "canopyTree",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "The [PartialMerkleTree]."
+            "The [CanopyTree]."
           ],
           "relations": [
             "distributor"
@@ -814,6 +992,10 @@ export type MerkleDistributor = {
           "type": "u64"
         },
         {
+          "name": "leafIndex",
+          "type": "u32"
+        },
+        {
           "name": "proof",
           "type": {
             "vec": {
@@ -823,10 +1005,6 @@ export type MerkleDistributor = {
               ]
             }
           }
-        },
-        {
-          "name": "initialIndex",
-          "type": "u8"
         }
       ]
     },
@@ -917,6 +1095,67 @@ export type MerkleDistributor = {
     }
   ],
   "accounts": [
+    {
+      "name": "canopyTree",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "root",
+            "docs": [
+              "The 256-bit merkle root."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "The depth of merkle will store onchain",
+              "With `depth``: total levels from the root to leaves: depth + 1"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "nodes",
+            "docs": [
+              "A vector of node hashes representing canopy leaves node"
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "distributor",
+            "docs": [
+              "The distributor associated with this Merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "claimStatus",
       "docs": [
@@ -1011,6 +1250,97 @@ export type MerkleDistributor = {
       }
     },
     {
+      "name": "distributorRoot",
+      "docs": [
+        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Mint of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "Base key of distributor root"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "distributorRootVault",
+            "docs": [
+              "Token Address of distributor root vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "maxClaimAmount",
+            "docs": [
+              "Max claim amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxDistributor",
+            "docs": [
+              "Max distributor"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFundedAmount",
+            "docs": [
+              "total funded amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalDistributorCreated",
+            "docs": [
+              "total escrow created"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer for future use or alignment."
+            ],
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "merkleDistributor",
       "docs": [
         "State for the account which distributes tokens."
@@ -1068,16 +1398,9 @@ export type MerkleDistributor = {
             "type": "publicKey"
           },
           {
-            "name": "parentAccount",
+            "name": "distributorRoot",
             "docs": [
-              "Parent account use to distribute fund to all distributor"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "partialMerkleTree",
-            "docs": [
-              "Partial merkle tree account"
+              "Distributor root use to distribute fund to all distributor"
             ],
             "type": "publicKey"
           },
@@ -1141,6 +1464,13 @@ export type MerkleDistributor = {
             "name": "activationPoint",
             "docs": [
               "this merkle tree is activated from this slot or timestamp"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fundedAmount",
+            "docs": [
+              "The total amount has been funded"
             ],
             "type": "u64"
           },
@@ -1217,147 +1547,6 @@ export type MerkleDistributor = {
           }
         ]
       }
-    },
-    {
-      "name": "parentAccount",
-      "docs": [
-        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "docs": [
-              "Bump seed."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding0",
-            "docs": [
-              "padding 0"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                7
-              ]
-            }
-          },
-          {
-            "name": "admin",
-            "docs": [
-              "Admin of merkle tree, store for for testing purpose"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "mint",
-            "docs": [
-              "Mint of the token to be distributed."
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "parentVault",
-            "docs": [
-              "Token Address of parent vault"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "totalDistributed",
-            "docs": [
-              "Total value distributed to distributor vault"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "buffer",
-            "docs": [
-              "Buffer for future use or alignment."
-            ],
-            "type": {
-              "array": [
-                "u128",
-                5
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "partialMerkleTree",
-      "docs": [
-        "Holds whether or not a claimant has claimed tokens."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "root",
-            "docs": [
-              "The 256-bit merkle root."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "depth",
-            "docs": [
-              "The number of layers in the tree that are stored on-chain, excluding the root layer."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "totalNodes",
-            "docs": [
-              "The total number of nodes stored on-chain. This is used for breadth-first search (BFS) traversal."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "nodes",
-            "docs": [
-              "A vector of node hashes representing a subset of the Merkle tree, excluding the root.",
-              "The length of this vector should be equal to `total_nodes`."
-            ],
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
-          },
-          {
-            "name": "distributor",
-            "docs": [
-              "The distributor associated with this Merkle tree"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "buffer",
-            "docs": [
-              "Buffer"
-            ],
-            "type": {
-              "array": [
-                "u64",
-                5
-              ]
-            }
-          }
-        ]
-      }
     }
   ],
   "types": [
@@ -1369,34 +1558,6 @@ export type MerkleDistributor = {
           {
             "name": "version",
             "type": "u64"
-          },
-          {
-            "name": "root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "totalNodes",
-            "type": "u8"
-          },
-          {
-            "name": "depth",
-            "type": "u8"
-          },
-          {
-            "name": "nodes",
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
           },
           {
             "name": "totalClaim",
@@ -1448,10 +1609,6 @@ export type MerkleDistributor = {
           },
           {
             "name": "locker",
-            "type": "publicKey"
-          },
-          {
-            "name": "parentAccount",
             "type": "publicKey"
           }
         ]
@@ -1709,8 +1866,8 @@ export type MerkleDistributor = {
     },
     {
       "code": 6030,
-      "name": "TestLog",
-      "msg": "testlog"
+      "name": "CanopyRootMissMatch",
+      "msg": "Canopy root miss match with real root"
     }
   ]
 };
@@ -1720,24 +1877,29 @@ export const IDL: MerkleDistributor = {
   "name": "merkle_distributor",
   "instructions": [
     {
-      "name": "newParentAccount",
+      "name": "newDistributorRoot",
       "docs": [
         "ADMIN FUNCTIONS ////"
       ],
       "accounts": [
         {
-          "name": "parentAccount",
+          "name": "distributorRoot",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "[ParentAccount]"
+            "[DistributorRoot]"
           ],
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "type": "string",
-                "value": "ParentAccount"
+                "value": "DistributorRoot"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
               },
               {
                 "kind": "account",
@@ -1749,12 +1911,11 @@ export const IDL: MerkleDistributor = {
           }
         },
         {
-          "name": "parentVault",
-          "isMut": false,
+          "name": "distributorRootVault",
+          "isMut": true,
           "isSigner": false,
           "docs": [
-            "Parent vault",
-            "Should create previously"
+            "Distributor root vault"
           ]
         },
         {
@@ -1763,6 +1924,14 @@ export const IDL: MerkleDistributor = {
           "isSigner": false,
           "docs": [
             "The mint to distribute."
+          ]
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
           ]
         },
         {
@@ -1789,9 +1958,98 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "maxClaimAmount",
+          "type": "u64"
+        },
+        {
+          "name": "maxDistributor",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fundDistributorRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]"
+          ],
+          "relations": [
+            "mint"
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer."
+          ]
+        },
+        {
+          "name": "payerToken",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Payer Token Account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxAmount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "newDistributor",
@@ -1830,26 +2088,12 @@ export const IDL: MerkleDistributor = {
           }
         },
         {
-          "name": "partialMerkleTree",
+          "name": "distributorRoot",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "[MerkleDistributor]."
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "PartialMerkleTree"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "distributor"
-              }
-            ]
-          }
+            "The [DistributorRoot]."
+          ]
         },
         {
           "name": "base",
@@ -1877,7 +2121,7 @@ export const IDL: MerkleDistributor = {
         },
         {
           "name": "tokenVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "Token vault",
@@ -1886,11 +2130,18 @@ export const IDL: MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The authority to set the clawback receiver and change itself."
+          ]
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -1908,6 +2159,11 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1920,33 +2176,112 @@ export const IDL: MerkleDistributor = {
       ]
     },
     {
-      "name": "distributeVault",
+      "name": "createCanopyTree",
       "accounts": [
         {
-          "name": "parentAccount",
+          "name": "canopyTree",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "The [ParentState]."
+            "[CanopyTree]"
           ],
-          "relations": [
-            "admin"
-          ]
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "CanopyTree"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "distributor"
+              }
+            ]
+          }
         },
         {
-          "name": "parentVault",
-          "isMut": true,
+          "name": "distributor",
+          "isMut": false,
           "isSigner": false,
           "docs": [
-            "Parent vault containing the tokens to distribute to distributor vault."
+            "The [MerkleDistributor]."
           ]
         },
         {
           "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
           "isMut": false,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
-            "Admin"
+            "The [System] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "depth",
+          "type": "u8"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "canopyNodes",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fundMerkleDistributorFromRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault containing the tokens to distribute to distributor vault."
+          ]
+        },
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "distributorVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor vault"
           ]
         },
         {
@@ -2224,11 +2559,11 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
-          "name": "partialMerkleTree",
+          "name": "canopyTree",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "The [PartialMerkleTree]."
+            "The [CanopyTree]."
           ],
           "relations": [
             "distributor"
@@ -2321,6 +2656,10 @@ export const IDL: MerkleDistributor = {
           "type": "u64"
         },
         {
+          "name": "leafIndex",
+          "type": "u32"
+        },
+        {
           "name": "proof",
           "type": {
             "vec": {
@@ -2330,10 +2669,6 @@ export const IDL: MerkleDistributor = {
               ]
             }
           }
-        },
-        {
-          "name": "initialIndex",
-          "type": "u8"
         }
       ]
     },
@@ -2419,11 +2754,11 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
-          "name": "partialMerkleTree",
+          "name": "canopyTree",
           "isMut": false,
           "isSigner": false,
           "docs": [
-            "The [PartialMerkleTree]."
+            "The [CanopyTree]."
           ],
           "relations": [
             "distributor"
@@ -2531,6 +2866,10 @@ export const IDL: MerkleDistributor = {
           "type": "u64"
         },
         {
+          "name": "leafIndex",
+          "type": "u32"
+        },
+        {
           "name": "proof",
           "type": {
             "vec": {
@@ -2540,10 +2879,6 @@ export const IDL: MerkleDistributor = {
               ]
             }
           }
-        },
-        {
-          "name": "initialIndex",
-          "type": "u8"
         }
       ]
     },
@@ -2634,6 +2969,67 @@ export const IDL: MerkleDistributor = {
     }
   ],
   "accounts": [
+    {
+      "name": "canopyTree",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "root",
+            "docs": [
+              "The 256-bit merkle root."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "The depth of merkle will store onchain",
+              "With `depth``: total levels from the root to leaves: depth + 1"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "nodes",
+            "docs": [
+              "A vector of node hashes representing canopy leaves node"
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "distributor",
+            "docs": [
+              "The distributor associated with this Merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "claimStatus",
       "docs": [
@@ -2728,6 +3124,97 @@ export const IDL: MerkleDistributor = {
       }
     },
     {
+      "name": "distributorRoot",
+      "docs": [
+        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Mint of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "Base key of distributor root"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "distributorRootVault",
+            "docs": [
+              "Token Address of distributor root vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "maxClaimAmount",
+            "docs": [
+              "Max claim amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxDistributor",
+            "docs": [
+              "Max distributor"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFundedAmount",
+            "docs": [
+              "total funded amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalDistributorCreated",
+            "docs": [
+              "total escrow created"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer for future use or alignment."
+            ],
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "merkleDistributor",
       "docs": [
         "State for the account which distributes tokens."
@@ -2785,16 +3272,9 @@ export const IDL: MerkleDistributor = {
             "type": "publicKey"
           },
           {
-            "name": "parentAccount",
+            "name": "distributorRoot",
             "docs": [
-              "Parent account use to distribute fund to all distributor"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "partialMerkleTree",
-            "docs": [
-              "Partial merkle tree account"
+              "Distributor root use to distribute fund to all distributor"
             ],
             "type": "publicKey"
           },
@@ -2858,6 +3338,13 @@ export const IDL: MerkleDistributor = {
             "name": "activationPoint",
             "docs": [
               "this merkle tree is activated from this slot or timestamp"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fundedAmount",
+            "docs": [
+              "The total amount has been funded"
             ],
             "type": "u64"
           },
@@ -2934,147 +3421,6 @@ export const IDL: MerkleDistributor = {
           }
         ]
       }
-    },
-    {
-      "name": "parentAccount",
-      "docs": [
-        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "docs": [
-              "Bump seed."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding0",
-            "docs": [
-              "padding 0"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                7
-              ]
-            }
-          },
-          {
-            "name": "admin",
-            "docs": [
-              "Admin of merkle tree, store for for testing purpose"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "mint",
-            "docs": [
-              "Mint of the token to be distributed."
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "parentVault",
-            "docs": [
-              "Token Address of parent vault"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "totalDistributed",
-            "docs": [
-              "Total value distributed to distributor vault"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "buffer",
-            "docs": [
-              "Buffer for future use or alignment."
-            ],
-            "type": {
-              "array": [
-                "u128",
-                5
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "partialMerkleTree",
-      "docs": [
-        "Holds whether or not a claimant has claimed tokens."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "root",
-            "docs": [
-              "The 256-bit merkle root."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "depth",
-            "docs": [
-              "The number of layers in the tree that are stored on-chain, excluding the root layer."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "totalNodes",
-            "docs": [
-              "The total number of nodes stored on-chain. This is used for breadth-first search (BFS) traversal."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "nodes",
-            "docs": [
-              "A vector of node hashes representing a subset of the Merkle tree, excluding the root.",
-              "The length of this vector should be equal to `total_nodes`."
-            ],
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
-          },
-          {
-            "name": "distributor",
-            "docs": [
-              "The distributor associated with this Merkle tree"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "buffer",
-            "docs": [
-              "Buffer"
-            ],
-            "type": {
-              "array": [
-                "u64",
-                5
-              ]
-            }
-          }
-        ]
-      }
     }
   ],
   "types": [
@@ -3086,34 +3432,6 @@ export const IDL: MerkleDistributor = {
           {
             "name": "version",
             "type": "u64"
-          },
-          {
-            "name": "root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "totalNodes",
-            "type": "u8"
-          },
-          {
-            "name": "depth",
-            "type": "u8"
-          },
-          {
-            "name": "nodes",
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
           },
           {
             "name": "totalClaim",
@@ -3165,10 +3483,6 @@ export const IDL: MerkleDistributor = {
           },
           {
             "name": "locker",
-            "type": "publicKey"
-          },
-          {
-            "name": "parentAccount",
             "type": "publicKey"
           }
         ]
@@ -3426,8 +3740,8 @@ export const IDL: MerkleDistributor = {
     },
     {
       "code": 6030,
-      "name": "TestLog",
-      "msg": "testlog"
+      "name": "CanopyRootMissMatch",
+      "msg": "Canopy root miss match with real root"
     }
   ]
 };

@@ -6,7 +6,11 @@ import {
   claim,
   claimLocked,
   clawBack,
+  createCanopyTree,
   createNewDistributor,
+  createNewDistributorRoot,
+  fundDistributorRoot,
+  fundMerkleDistributorFromRoot,
 } from "./merkle_distributor";
 import {
   createAndFundWallet,
@@ -24,13 +28,15 @@ describe("Claim permissioned", () => {
   let admin = Keypair.generate();
   let operator = Keypair.generate();
   let tree: BalanceTree;
-  let maxNumNodes = 5;
+  let maxNumNodes = 15;
   let whitelistedKPs: web3.Keypair[] = [];
   let amountUnlockedArr: anchor.BN[] = [];
   let amountLockedArr: anchor.BN[] = [];
   let totalClaim = new BN(0);
   let mint: PublicKey;
-  let sliceLayers = 3;
+  let depth = 2;
+  let maxClaimAmount: anchor.BN;
+  let maxDistributor: anchor.BN;
 
   before(async () => {
     await createAndFundWallet(provider.connection, ADMIN);
@@ -46,6 +52,9 @@ describe("Claim permissioned", () => {
       amountLockedArr.push(amountLocked);
       totalClaim = totalClaim.add(amountUnlocked).add(amountLocked);
     }
+
+    maxClaimAmount = totalClaim;
+    maxDistributor = new anchor.BN(maxNumNodes);
 
     tree = new BalanceTree(
       whitelistedKPs.map((kp, index) => {
@@ -69,26 +78,47 @@ describe("Claim permissioned", () => {
       },
       TOKEN_PROGRAM_ID
     );
+
+    // mint to admin
+    console.log("Mint to admin");
+    const adminTokenAccount = await getOrCreateAssociatedTokenAccountWrap(
+      provider.connection,
+      admin,
+      mint,
+      admin.publicKey
+    );
+
+    await mintTo(
+      provider.connection,
+      ADMIN,
+      mint,
+      adminTokenAccount,
+      ADMIN,
+      totalClaim.toNumber()
+    );
   });
   it("Full flow", async () => {
     console.log("create distributor");
     let currentTime = await getBlockTime(provider.connection);
-    let startVestingTs = new BN(currentTime + 3);
-    let endVestingTs = new BN(currentTime + 6);
-    let clawbackStartTs = new BN(currentTime + 7);
+    let startVestingTs = new BN(currentTime + 7);
+    let endVestingTs = new BN(currentTime + 10);
+    let clawbackStartTs = new BN(currentTime + 11);
     let activationType = 1; // timestamp
-    let activationPoint = new BN(currentTime + 2);
+    let activationPoint = new BN(currentTime + 6);
     let closable = false;
     let totalBonus = new BN(0);
     let bonusVestingDuration = new BN(0);
     let claimType = 1;
     let locker = web3.SystemProgram.programId;
-    let partialMerkleTree = tree.getPartialBfsTree(sliceLayers);
+    let canopyBufNodes = tree.getCanopyNodes(depth);
+    console.log("canopy nodes: ", canopyBufNodes)
     ////
-    let nodes = [];
-    partialMerkleTree.forEach(function (value) {
-      nodes.push(Array.from(new Uint8Array(value)));
+    let canopyNodes = [];
+    canopyBufNodes.forEach(function (value) {
+      canopyNodes.push(Array.from(new Uint8Array(value)));
     });
+
+    console.log("canopy nodes: ", canopyNodes.length)
 
     let clawbackReceiver = await getOrCreateAssociatedTokenAccountWrap(
       provider.connection,
@@ -96,13 +126,20 @@ describe("Claim permissioned", () => {
       mint,
       ADMIN.publicKey
     );
+
+    // create distributor root
+    let { distributorRoot, distributorRootVault } =
+      await createNewDistributorRoot({
+        admin,
+        mint,
+        maxClaimAmount,
+        maxDistributor,
+      });
+
+      
     let { distributor, tokenVault } = await createNewDistributor({
       admin,
       version: 0,
-      root: tree.getRoot(),
-      depth: sliceLayers - 1,
-      nodes,
-      totalNodes: nodes.length,
       totalClaim,
       maxNumNodes: new BN(maxNumNodes),
       startVestingTs,
@@ -118,16 +155,35 @@ describe("Claim permissioned", () => {
       locker,
       mint,
       clawbackReceiver,
+      distributorRoot
     });
-    // mint
-    await mintTo(
-      provider.connection,
-      ADMIN,
+
+
+    // create canopy tree correspond with distributor
+    let canopyTree = await createCanopyTree({
+      admin,
+      distributor,
+      depth,
+      root: Array.from(new Uint8Array(tree.getRoot())),
+      canopyNodes,
+    });
+
+    // fund to distributor root
+    await fundDistributorRoot({
+      admin,
+      payer: admin,
+      distributorRoot,
       mint,
-      tokenVault,
-      ADMIN,
-      totalClaim.toNumber()
-    );
+      maxAmount: maxClaimAmount,
+    });
+    // fund to distributor from root
+    await fundMerkleDistributorFromRoot({
+      admin,
+      distributorRoot,
+      distributorRootVault,
+      distributor,
+      distributorVault: tokenVault,
+    });
 
     while (true) {
       const currentTime = await getBlockTime(provider.connection);
@@ -141,17 +197,20 @@ describe("Claim permissioned", () => {
 
     console.log("claim");
     for (let i = 0; i < maxNumNodes - 1; i++) {
+      console.log("=========== claim index: ", i);
       var proofBuffers = tree.getPartialProof(
         whitelistedKPs[i].publicKey,
         amountUnlockedArr[i],
         amountLockedArr[i],
-        sliceLayers
+        depth
       );
       let proof = [];
       proofBuffers.proof.forEach(function (value) {
         proof.push(Array.from(new Uint8Array(value)));
       });
-      console.log("claim index: ", i);
+      
+      console.log("proof: ", proofBuffers)
+      console.log("proof index: ", proofBuffers.index)
       await claim({
         distributor,
         claimant: whitelistedKPs[i],
@@ -159,8 +218,9 @@ describe("Claim permissioned", () => {
         amountLocked: amountLockedArr[i],
         proof,
         operator,
-        initialIndex: proofBuffers.index,
+        leafIndex: proofBuffers.index,
       });
+      
     }
 
     while (true) {

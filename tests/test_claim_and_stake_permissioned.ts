@@ -6,7 +6,11 @@ import {
   claimAndStake,
   claimLockedAndStake,
   clawBack,
+  createCanopyTree,
   createNewDistributor,
+  createNewDistributorRoot,
+  fundDistributorRoot,
+  fundMerkleDistributorFromRoot,
 } from "./merkle_distributor";
 import {
   createAndFundWallet,
@@ -17,7 +21,12 @@ import {
 } from "./common";
 import { BN } from "bn.js";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { createMint, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  createMint,
+  getAssociatedTokenAddressSync,
+  mintTo,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { createNewEscrowWithMaxLock, setupLocker } from "./locked_voter/setup";
 const provider = anchor.AnchorProvider.env();
 
@@ -33,7 +42,9 @@ describe("Claim and stake permissioned", () => {
   let mint: PublicKey;
   let locker: PublicKey;
   let escrow: PublicKey;
-  let sliceLayers = 3;
+  let depth = 2;
+  let maxClaimAmount: anchor.BN;
+  let maxDistributor: anchor.BN;
   before(async () => {
     let escrowOwner = Keypair.generate();
     await createAndFundWallet(provider.connection, ADMIN);
@@ -50,6 +61,8 @@ describe("Claim and stake permissioned", () => {
       amountLockedArr.push(amountLocked);
       totalClaim = totalClaim.add(amountUnlocked).add(amountLocked);
     }
+    maxClaimAmount = totalClaim;
+    maxDistributor = new anchor.BN(maxNumNodes);
 
     tree = new BalanceTree(
       whitelistedKPs.map((kp, index) => {
@@ -74,6 +87,24 @@ describe("Claim and stake permissioned", () => {
       TOKEN_PROGRAM_ID
     );
 
+    // mint
+    console.log("Mint to admin");
+    const adminTokenAccount = await getOrCreateAssociatedTokenAccountWrap(
+      provider.connection,
+      admin,
+      mint,
+      admin.publicKey
+    );
+
+    await mintTo(
+      provider.connection,
+      ADMIN,
+      mint,
+      adminTokenAccount,
+      ADMIN,
+      totalClaim.toNumber()
+    );
+
     console.log("create locker");
     locker = await setupLocker({
       payer: ADMIN,
@@ -89,31 +120,24 @@ describe("Claim and stake permissioned", () => {
       locker,
       escrowOwner,
     });
-
-    let partialMerkleTree = tree.getPartialBfsTree(sliceLayers);
-    ////
-    let nodes = [];
-    partialMerkleTree.forEach(function (value) {
-      nodes.push(Array.from(new Uint8Array(value)));
-    });
   });
   it("Full flow", async () => {
     console.log("create distributor");
     let currentTime = await getBlockTime(provider.connection);
-    let startVestingTs = new BN(currentTime + 3);
-    let endVestingTs = new BN(currentTime + 6);
-    let clawbackStartTs = new BN(currentTime + 7);
+    let startVestingTs = new BN(currentTime + 6);
+    let endVestingTs = new BN(currentTime + 9);
+    let clawbackStartTs = new BN(currentTime + 10);
     let activationType = 1; // timestamp
-    let activationPoint = new BN(currentTime + 2);
+    let activationPoint = new BN(currentTime + 5);
     let closable = false;
     let totalBonus = new BN(0);
     let bonusVestingDuration = new BN(0);
     let claimType = 3;
-    let partialMerkleTree = tree.getPartialBfsTree(sliceLayers);
+    let canopyBufNodes = tree.getCanopyNodes(depth);
     ////
-    let nodes = [];
-    partialMerkleTree.forEach(function (value) {
-      nodes.push(Array.from(new Uint8Array(value)));
+    let canopyNodes = [];
+    canopyBufNodes.forEach(function (value) {
+      canopyNodes.push(Array.from(new Uint8Array(value)));
     });
 
     let clawbackReceiver = await getOrCreateAssociatedTokenAccountWrap(
@@ -122,13 +146,20 @@ describe("Claim and stake permissioned", () => {
       mint,
       ADMIN.publicKey
     );
+
+    // create distributor root
+    let { distributorRoot, distributorRootVault } =
+      await createNewDistributorRoot({
+        admin,
+        mint,
+        maxClaimAmount,
+        maxDistributor,
+      });
+
+    // create distributor
     let { distributor, tokenVault } = await createNewDistributor({
       admin,
       version: 0,
-      root: tree.getRoot(),
-      depth: sliceLayers - 1,
-      nodes,
-      totalNodes: nodes.length,
       totalClaim,
       maxNumNodes: new BN(maxNumNodes),
       startVestingTs,
@@ -144,16 +175,34 @@ describe("Claim and stake permissioned", () => {
       locker,
       mint,
       clawbackReceiver,
+      distributorRoot,
     });
-    // mint
-    await mintTo(
-      provider.connection,
-      ADMIN,
+
+    // create canopy tree correspond with distributor
+    let canopyTree = await createCanopyTree({
+      admin,
+      distributor,
+      depth,
+      root: Array.from(new Uint8Array(tree.getRoot())),
+      canopyNodes,
+    });
+
+    // fund to distributor root
+    await fundDistributorRoot({
+      admin,
+      payer: admin,
+      distributorRoot,
       mint,
-      tokenVault,
-      ADMIN,
-      totalClaim.toNumber()
-    );
+      maxAmount: maxClaimAmount,
+    });
+    // fund to distributor from root
+    await fundMerkleDistributorFromRoot({
+      admin,
+      distributorRoot,
+      distributorRootVault,
+      distributor,
+      distributorVault: tokenVault,
+    });
 
     while (true) {
       const currentTime = await getBlockTime(provider.connection);
@@ -171,7 +220,7 @@ describe("Claim and stake permissioned", () => {
         whitelistedKPs[i].publicKey,
         amountUnlockedArr[i],
         amountLockedArr[i],
-        sliceLayers
+        depth
       );
       let proof = [];
       proofBuffers.proof.forEach(function (value) {
@@ -186,7 +235,7 @@ describe("Claim and stake permissioned", () => {
         proof,
         escrow,
         operator,
-        initialIndex: proofBuffers.index,
+        leafIndex: proofBuffers.index,
       });
     }
 

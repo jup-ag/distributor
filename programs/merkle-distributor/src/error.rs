@@ -63,4 +63,6 @@ pub enum ErrorCode {
     InvalidRemainingAccounts,
     #[msg("Invalid account")]
     InvalidAccount,
+    #[msg("Canopy root miss match with real root")]
+    CanopyRootMissMatch,
 }

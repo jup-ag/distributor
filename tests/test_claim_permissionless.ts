@@ -6,7 +6,11 @@ import {
   claim,
   claimLocked,
   clawBack,
+  createCanopyTree,
   createNewDistributor,
+  createNewDistributorRoot,
+  fundDistributorRoot,
+  fundMerkleDistributorFromRoot,
 } from "./merkle_distributor";
 import {
   createAndFundWallet,
@@ -29,7 +33,9 @@ describe("Claim permissionless", () => {
   let amountLockedArr: anchor.BN[] = [];
   let totalClaim = new BN(0);
   let mint: PublicKey;
-  let sliceLayers = 3;
+  let depth = 2;
+  let maxClaimAmount: anchor.BN;
+  let maxDistributor: anchor.BN;
 
   before(async () => {
     await createAndFundWallet(provider.connection, ADMIN);
@@ -45,6 +51,9 @@ describe("Claim permissionless", () => {
       amountLockedArr.push(amountLocked);
       totalClaim = totalClaim.add(amountUnlocked).add(amountLocked);
     }
+
+    maxClaimAmount = totalClaim;
+    maxDistributor = new anchor.BN(maxNumNodes);
 
     tree = new BalanceTree(
       whitelistedKPs.map((kp, index) => {
@@ -68,6 +77,24 @@ describe("Claim permissionless", () => {
       },
       TOKEN_PROGRAM_ID
     );
+
+    // mint to admin
+    console.log("Mint to admin");
+    const adminTokenAccount = await getOrCreateAssociatedTokenAccountWrap(
+      provider.connection,
+      admin,
+      mint,
+      admin.publicKey
+    );
+
+    await mintTo(
+      provider.connection,
+      ADMIN,
+      mint,
+      adminTokenAccount,
+      ADMIN,
+      totalClaim.toNumber()
+    );
   });
   it("Full flow", async () => {
     console.log("create distributor");
@@ -83,11 +110,12 @@ describe("Claim permissionless", () => {
     let claimType = 0;
     let operator = web3.SystemProgram.programId;
     let locker = web3.SystemProgram.programId;
-    let partialMerkleTree = tree.getPartialBfsTree(sliceLayers);
+    let canopyBufNodes = tree.getCanopyNodes(depth);
+    console.log("canopy nodes: ", canopyBufNodes)
     ////
-    let nodes = [];
-    partialMerkleTree.forEach(function (value) {
-      nodes.push(Array.from(new Uint8Array(value)));
+    let canopyNodes = [];
+    canopyBufNodes.forEach(function (value) {
+      canopyNodes.push(Array.from(new Uint8Array(value)));
     });
 
     let clawbackReceiver = await getOrCreateAssociatedTokenAccountWrap(
@@ -96,13 +124,20 @@ describe("Claim permissionless", () => {
       mint,
       ADMIN.publicKey
     );
+
+    // create distributor root
+    let { distributorRoot, distributorRootVault } =
+      await createNewDistributorRoot({
+        admin,
+        mint,
+        maxClaimAmount,
+        maxDistributor,
+      });
+
+      
     let { distributor, tokenVault } = await createNewDistributor({
       admin,
       version: 0,
-      root: tree.getRoot(),
-      depth: sliceLayers - 1,
-      nodes,
-      totalNodes: nodes.length,
       totalClaim,
       maxNumNodes: new BN(maxNumNodes),
       startVestingTs,
@@ -118,16 +153,35 @@ describe("Claim permissionless", () => {
       locker,
       mint,
       clawbackReceiver,
+      distributorRoot
     });
-    // mint
-    await mintTo(
-      provider.connection,
-      ADMIN,
+    
+
+    // create canopy tree correspond with distributor
+    let canopyTree = await createCanopyTree({
+      admin,
+      distributor,
+      depth,
+      root: Array.from(new Uint8Array(tree.getRoot())),
+      canopyNodes,
+    });
+
+    // fund to distributor root
+    await fundDistributorRoot({
+      admin,
+      payer: admin,
+      distributorRoot,
       mint,
-      tokenVault,
-      ADMIN,
-      totalClaim.toNumber()
-    );
+      maxAmount: maxClaimAmount,
+    });
+    // fund to distributor from root
+    await fundMerkleDistributorFromRoot({
+      admin,
+      distributorRoot,
+      distributorRootVault,
+      distributor,
+      distributorVault: tokenVault,
+    });
 
     while (true) {
       const currentTime = await getBlockTime(provider.connection);
@@ -145,7 +199,7 @@ describe("Claim permissionless", () => {
         whitelistedKPs[i].publicKey,
         amountUnlockedArr[i],
         amountLockedArr[i],
-        sliceLayers
+        depth
       );
       let proof = [];
       proofBuffers.proof.forEach(function (value) {
@@ -158,7 +212,7 @@ describe("Claim permissionless", () => {
         amountUnlocked: amountUnlockedArr[i],
         amountLocked: amountLockedArr[i],
         proof,
-        initialIndex: proofBuffers.index,
+        leafIndex: proofBuffers.index,
       });
     }
 
