@@ -24,9 +24,8 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { createMint, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 const provider = anchor.AnchorProvider.env();
 
-describe("Claim permissioned", () => {
+describe("Canopy nodes is root", () => {
   let admin = Keypair.generate();
-  let operator = Keypair.generate();
   let tree: BalanceTree;
   let maxNumNodes = 5;
   let whitelistedKPs: web3.Keypair[] = [];
@@ -34,9 +33,9 @@ describe("Claim permissioned", () => {
   let amountLockedArr: anchor.BN[] = [];
   let totalClaim = new BN(0);
   let mint: PublicKey;
-  let depth = 2;
+  let depth = 0;
   let maxClaimAmount: anchor.BN;
-  let maxDistributor: anchor.BN;
+  let maxDistributor = new BN(1)
 
   before(async () => {
     await createAndFundWallet(provider.connection, ADMIN);
@@ -54,7 +53,6 @@ describe("Claim permissioned", () => {
     }
 
     maxClaimAmount = totalClaim;
-    maxDistributor = new anchor.BN(maxNumNodes);
 
     tree = new BalanceTree(
       whitelistedKPs.map((kp, index) => {
@@ -100,15 +98,16 @@ describe("Claim permissioned", () => {
   it("Full flow", async () => {
     console.log("create distributor");
     let currentTime = await getBlockTime(provider.connection);
-    let startVestingTs = new BN(currentTime + 7);
-    let endVestingTs = new BN(currentTime + 10);
-    let clawbackStartTs = new BN(currentTime + 11);
+    let startVestingTs = new BN(currentTime + 6);
+    let endVestingTs = new BN(currentTime + 9);
+    let clawbackStartTs = new BN(currentTime + 10);
     let activationType = 1; // timestamp
-    let activationPoint = new BN(currentTime + 6);
+    let activationPoint = new BN(currentTime + 5);
     let closable = false;
     let totalBonus = new BN(0);
     let bonusVestingDuration = new BN(0);
-    let claimType = 1;
+    let claimType = 0;
+    let operator = web3.SystemProgram.programId;
     let locker = web3.SystemProgram.programId;
     let canopyBufNodes = tree.getCanopyNodes(depth);
     ////
@@ -116,6 +115,7 @@ describe("Claim permissioned", () => {
     canopyBufNodes.forEach(function (value) {
       canopyNodes.push(Array.from(new Uint8Array(value)));
     });
+    
 
     let clawbackReceiver = await getOrCreateAssociatedTokenAccountWrap(
       provider.connection,
@@ -148,13 +148,13 @@ describe("Claim permissioned", () => {
       totalBonus,
       bonusVestingDuration,
       claimType,
-      operator: operator.publicKey,
+      operator,
       locker,
       mint,
       clawbackReceiver,
       distributorRoot
     });
-
+    
 
     // create canopy tree correspond with distributor
     await createCanopyTree({
@@ -192,7 +192,6 @@ describe("Claim permissioned", () => {
       }
     }
 
-    console.log("claim");
     for (let i = 0; i < maxNumNodes - 1; i++) {
       console.log("claim index: ", i);
       var proofBuffers = tree.getPartialProof(
@@ -205,16 +204,15 @@ describe("Claim permissioned", () => {
       proofBuffers.proof.forEach(function (value) {
         proof.push(Array.from(new Uint8Array(value)));
       });
+      
       await claim({
         distributor,
         claimant: whitelistedKPs[i],
         amountUnlocked: amountUnlockedArr[i],
         amountLocked: amountLockedArr[i],
         proof,
-        operator,
         leafIndex: proofBuffers.index,
       });
-      
     }
 
     while (true) {
@@ -231,7 +229,6 @@ describe("Claim permissioned", () => {
       console.log("claim locked index: ", i);
       await claimLocked({
         distributor,
-        operator,
         claimant: whitelistedKPs[i],
       });
     }

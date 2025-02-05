@@ -34,15 +34,46 @@ security_txt! {
 
 #[program]
 pub mod merkle_distributor {
+
     use super::*;
 
     /// ADMIN FUNCTIONS ////
+    #[allow(clippy::result_large_err)]
+    pub fn new_distributor_root(
+        ctx: Context<NewDistributorRoot>,
+        max_claim_amount: u64,
+        max_distributor: u64,
+    ) -> Result<()> {
+        handle_new_distributor_root(ctx, max_claim_amount, max_distributor)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn fund_distributor_root(ctx: Context<FundDistributorRoot>, max_amount: u64) -> Result<()> {
+        handle_fund_distributor_root(ctx, max_amount)
+    }
+
     #[allow(clippy::result_large_err)]
     pub fn new_distributor(
         ctx: Context<NewDistributor>,
         params: NewDistributorParams,
     ) -> Result<()> {
         handle_new_distributor(ctx, &params)
+    }
+
+    pub fn create_canopy_tree(
+        ctx: Context<CreateCanopyTree>,
+        depth: u8,
+        root: [u8; 32],
+        canopy_nodes: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        handle_create_canopy_tree(ctx, depth, root, canopy_nodes)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn fund_merkle_distributor_from_root<'info>(
+        ctx: Context<'_, '_, '_, 'info, FundMerkleDisitributorFromRoot<'info>>,
+    ) -> Result<()> {
+        handle_fund_merkle_distributor_from_root(ctx)
     }
 
     /// only available in test phase
@@ -91,9 +122,10 @@ pub mod merkle_distributor {
         ctx: Context<NewClaim>,
         amount_unlocked: u64,
         amount_locked: u64,
+        leaf_index: u32,
         proof: Vec<[u8; 32]>,
     ) -> Result<()> {
-        handle_new_claim(ctx, amount_unlocked, amount_locked, proof)
+        handle_new_claim(ctx, amount_unlocked, amount_locked, leaf_index, proof)
     }
 
     #[allow(clippy::result_large_err)]
@@ -106,9 +138,10 @@ pub mod merkle_distributor {
         ctx: Context<NewClaimAndStake>,
         amount_unlocked: u64,
         amount_locked: u64,
+        leaf_index: u32,
         proof: Vec<[u8; 32]>,
     ) -> Result<()> {
-        handle_new_claim_and_stake(ctx, amount_unlocked, amount_locked, proof)
+        handle_new_claim_and_stake(ctx, amount_unlocked, amount_locked, leaf_index, proof)
     }
 
     #[allow(clippy::result_large_err)]
