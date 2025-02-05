@@ -111,7 +111,7 @@ impl NewDistributorParams {
 }
 /// Accounts for [merkle_distributor::handle_new_distributor].
 #[derive(Accounts)]
-#[instruction(version: u64, total_node: u8)]
+#[instruction(version: u64)]
 pub struct NewDistributor<'info> {
     /// [MerkleDistributor].
     #[account(
