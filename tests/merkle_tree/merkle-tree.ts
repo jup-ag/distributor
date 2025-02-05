@@ -57,14 +57,6 @@ export class MerkleTree {
 
     // Create layers
     this._layers = this.getLayers(this._elements);
-    console.log(this._layers);
-    for(const layer of this._layers){
-      console.log("layer")
-      for(const e of layer){
-        
-        console.log(Array.from(new Uint8Array(e)))
-      }
-    }
   }
 
   getLayers(elements: Buffer[]): Buffer[][] {
@@ -111,7 +103,8 @@ export class MerkleTree {
   }
 
   getCanopyNodes(depth: number): Buffer[] {
-    return this._layers[this._layers.length - depth];
+    // if set depth = 2, it's mean we will store all nodes at layer 2 of merkle tree onchain.
+    return this._layers[this._layers.length - depth - 1];
   }
 
   getRoot(): Buffer {
@@ -152,28 +145,31 @@ export class MerkleTree {
       throw new Error("Element does not exist in Merkle tree");
     }
 
-    let idx = initialIdx;
-    let index = null;
-    const proof = this._layers
-      .slice(0, this._layers.length - depth)
-      .reduce((proof, layer) => {
-        const pairElement = getPairElement(idx, layer);
+    const partialLayers = this._layers.slice(0, this._layers.length - depth - 1);
+
+    const { proof, idx, leafIndex } = partialLayers.reduce(
+      (acc, layer) => {
+        const pairElement = getPairElement(acc.idx, layer);
         if (pairElement) {
-          proof.push(pairElement);
-          if (!index) {
-            index = idx;
+          acc.proof.push(pairElement);
+          if (acc.leafIndex === null) {
+            acc.leafIndex = acc.idx;
           }
         }
-
-        idx = Math.floor(idx / 2);
-        return proof;
-      }, []);
-
-      if(!proof.length){
-        index = 1
+        acc.idx = Math.floor(acc.idx / 2);
+        return acc;
+      },
+      {
+        proof: [] as Buffer[],
+        idx: initialIdx,
+        leafIndex: null as number | null,
       }
+    );
 
-    return { proof, index };
+    // If no proof elements were found, set leafIndex to the final idx
+    const finalLeafIndex = proof.length ? leafIndex! : idx;
+
+    return { proof, index: finalLeafIndex };
   }
 
   getHexProof(el: Buffer): string[] {

@@ -179,7 +179,7 @@ describe("Claim and stake permissioned", () => {
     });
 
     // create canopy tree correspond with distributor
-    let canopyTree = await createCanopyTree({
+    await createCanopyTree({
       admin,
       distributor,
       depth,

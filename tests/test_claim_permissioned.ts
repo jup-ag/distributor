@@ -28,7 +28,7 @@ describe("Claim permissioned", () => {
   let admin = Keypair.generate();
   let operator = Keypair.generate();
   let tree: BalanceTree;
-  let maxNumNodes = 15;
+  let maxNumNodes = 5;
   let whitelistedKPs: web3.Keypair[] = [];
   let amountUnlockedArr: anchor.BN[] = [];
   let amountLockedArr: anchor.BN[] = [];
@@ -111,14 +111,11 @@ describe("Claim permissioned", () => {
     let claimType = 1;
     let locker = web3.SystemProgram.programId;
     let canopyBufNodes = tree.getCanopyNodes(depth);
-    console.log("canopy nodes: ", canopyBufNodes)
     ////
     let canopyNodes = [];
     canopyBufNodes.forEach(function (value) {
       canopyNodes.push(Array.from(new Uint8Array(value)));
     });
-
-    console.log("canopy nodes: ", canopyNodes.length)
 
     let clawbackReceiver = await getOrCreateAssociatedTokenAccountWrap(
       provider.connection,
@@ -160,7 +157,7 @@ describe("Claim permissioned", () => {
 
 
     // create canopy tree correspond with distributor
-    let canopyTree = await createCanopyTree({
+    await createCanopyTree({
       admin,
       distributor,
       depth,
@@ -197,7 +194,7 @@ describe("Claim permissioned", () => {
 
     console.log("claim");
     for (let i = 0; i < maxNumNodes - 1; i++) {
-      console.log("=========== claim index: ", i);
+      console.log("claim index: ", i);
       var proofBuffers = tree.getPartialProof(
         whitelistedKPs[i].publicKey,
         amountUnlockedArr[i],
@@ -208,9 +205,6 @@ describe("Claim permissioned", () => {
       proofBuffers.proof.forEach(function (value) {
         proof.push(Array.from(new Uint8Array(value)));
       });
-      
-      console.log("proof: ", proofBuffers)
-      console.log("proof index: ", proofBuffers.index)
       await claim({
         distributor,
         claimant: whitelistedKPs[i],

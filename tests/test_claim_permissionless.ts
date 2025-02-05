@@ -111,7 +111,6 @@ describe("Claim permissionless", () => {
     let operator = web3.SystemProgram.programId;
     let locker = web3.SystemProgram.programId;
     let canopyBufNodes = tree.getCanopyNodes(depth);
-    console.log("canopy nodes: ", canopyBufNodes)
     ////
     let canopyNodes = [];
     canopyBufNodes.forEach(function (value) {
@@ -158,7 +157,7 @@ describe("Claim permissionless", () => {
     
 
     // create canopy tree correspond with distributor
-    let canopyTree = await createCanopyTree({
+    await createCanopyTree({
       admin,
       distributor,
       depth,
@@ -193,8 +192,8 @@ describe("Claim permissionless", () => {
       }
     }
 
-    console.log("-------------claim--------------");
     for (let i = 0; i < maxNumNodes - 1; i++) {
+      console.log("claim index: ", i);
       var proofBuffers = tree.getPartialProof(
         whitelistedKPs[i].publicKey,
         amountUnlockedArr[i],
@@ -205,7 +204,7 @@ describe("Claim permissionless", () => {
       proofBuffers.proof.forEach(function (value) {
         proof.push(Array.from(new Uint8Array(value)));
       });
-      console.log("claim index: ", i);
+      
       await claim({
         distributor,
         claimant: whitelistedKPs[i],

@@ -56,7 +56,6 @@ impl CanopyTree {
     }
 
     pub fn verify_leaf(&self, proof: Vec<[u8; 32]>, leaf: [u8; 32], leaf_index: u32) -> bool {
-        msg!("leaf index: {:?}", leaf_index);
         let mut current_hash = leaf;
         let mut current_index = leaf_index;
         for proof_element in proof.into_iter() {
@@ -70,7 +69,6 @@ impl CanopyTree {
         }
 
         // Compare current_hash vs canopy nodes
-        msg!("nodes: {:?}", self.nodes);
         let expected_hash = self.nodes[current_index as usize];
 
         current_hash == expected_hash
