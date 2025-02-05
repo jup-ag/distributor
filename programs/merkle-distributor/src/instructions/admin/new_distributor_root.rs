@@ -17,7 +17,7 @@ pub struct NewDistributorRoot<'info> {
         ],
         bump,
         space = 8 + DistributorRoot::INIT_SPACE,
-        payer = admin
+        payer = payer
     )]
     pub distributor_root: AccountLoader<'info, DistributorRoot>,
 
@@ -26,7 +26,7 @@ pub struct NewDistributorRoot<'info> {
         init_if_needed,
         associated_token::mint = mint,
         associated_token::authority = distributor_root,
-        payer = admin
+        payer = payer
     )]
     pub distributor_root_vault: Account<'info, TokenAccount>,
 
@@ -36,10 +36,12 @@ pub struct NewDistributorRoot<'info> {
     /// Base key of the distributor.
     pub base: Signer<'info>,
 
-    /// Admin wallet, responsible for creating the distributor and paying for the transaction.
-    /// Also has the authority to set the clawback receiver and change itself.
+    /// CHECK: This account is not use to read or write
+    pub admin: UncheckedAccount<'info>,
+
+    /// Payer wallet, responsible for creating the distributor and paying for the transaction.
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     /// The [System] program.
     pub system_program: Program<'info, System>,
@@ -61,6 +63,7 @@ pub fn handle_new_distributor_root(
     distributor_root.bump = *ctx.bumps.get("distributor_root").unwrap();
     distributor_root.mint = ctx.accounts.mint.key();
     distributor_root.base = ctx.accounts.base.key();
+    distributor_root.admin = ctx.accounts.admin.key();
     distributor_root.max_claim_amount = max_claim_amount;
     distributor_root.max_distributor = max_distributor;
     distributor_root.distributor_root_vault = ctx.accounts.distributor_root_vault.key();

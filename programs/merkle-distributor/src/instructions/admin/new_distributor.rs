@@ -152,7 +152,6 @@ pub struct NewDistributor<'info> {
     )]
     pub token_vault: Account<'info, TokenAccount>,
 
-    /// The authority to set the clawback receiver and change itself.
     /// CHECK: This account is not use to read or write
     pub admin: UncheckedAccount<'info>,
 

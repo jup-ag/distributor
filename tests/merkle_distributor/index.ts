@@ -124,6 +124,7 @@ export async function createNewDistributorRoot(
       mint,
       base: base.publicKey,
       admin: admin.publicKey,
+      payer: admin.publicKey,
       systemProgram: web3.SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -249,7 +250,7 @@ export async function createCanopyTree(params: CreateCanopyTreeParams) {
     .accounts({
       canopyTree,
       distributor,
-      admin: admin.publicKey,
+      payer: admin.publicKey,
       systemProgram: web3.SystemProgram.programId,
     })
     .preInstructions([

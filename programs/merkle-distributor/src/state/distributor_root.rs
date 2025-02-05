@@ -14,6 +14,8 @@ pub struct DistributorRoot {
     pub mint: Pubkey,
     /// Base key of distributor root
     pub base: Pubkey,
+    /// Admin
+    pub admin: Pubkey,
     /// Token Address of distributor root vault
     pub distributor_root_vault: Pubkey,
     /// Max claim amount
@@ -28,7 +30,7 @@ pub struct DistributorRoot {
     pub buffer: [u128; 5],
 }
 
-const_assert!(DistributorRoot::INIT_SPACE == 216);
+const_assert!(DistributorRoot::INIT_SPACE == 248);
 
 impl DistributorRoot {
     /// Returns the DistributorRootVaultSigner for PDA signing.

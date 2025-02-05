@@ -16,15 +16,16 @@ pub struct CreateCanopyTree<'info> {
         ],
         bump,
         space = CanopyTree::space(depth as usize),
-        payer = admin
+        payer = payer
     )]
     pub canopy_tree: Account<'info, CanopyTree>,
 
     /// The [MerkleDistributor].
     pub distributor: AccountLoader<'info, MerkleDistributor>,
 
+    /// Payer wallet, responsible for creating the distributor and paying for the transaction.
     #[account(mut)]
-    pub admin: Signer<'info>,
+    pub payer: Signer<'info>,
 
     /// The [System] program.
     pub system_program: Program<'info, System>,

@@ -119,11 +119,11 @@ describe("Claim and stake permissionless", () => {
   it("Full flow", async () => {
     console.log("create distributor");
     let currentTime = await getBlockTime(provider.connection);
-    let startVestingTs = new BN(currentTime + 3);
-    let endVestingTs = new BN(currentTime + 6);
-    let clawbackStartTs = new BN(currentTime + 7);
+    let startVestingTs = new BN(currentTime + 6);
+    let endVestingTs = new BN(currentTime + 9);
+    let clawbackStartTs = new BN(currentTime + 10);
     let activationType = 1; // timestamp
-    let activationPoint = new BN(currentTime + 2);
+    let activationPoint = new BN(currentTime + 5);
     let closable = false;
     let totalBonus = new BN(0);
     let bonusVestingDuration = new BN(0);

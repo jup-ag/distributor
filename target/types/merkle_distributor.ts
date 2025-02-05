@@ -62,11 +62,15 @@ export type MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -257,10 +261,7 @@ export type MerkleDistributor = {
         {
           "name": "admin",
           "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The authority to set the clawback receiver and change itself."
-          ]
+          "isSigner": false
         },
         {
           "name": "payer",
@@ -335,9 +336,12 @@ export type MerkleDistributor = {
           ]
         },
         {
-          "name": "admin",
+          "name": "payer",
           "isMut": true,
-          "isSigner": true
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
         },
         {
           "name": "systemProgram",
@@ -1287,6 +1291,13 @@ export type MerkleDistributor = {
             "name": "base",
             "docs": [
               "Base key of distributor root"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin"
             ],
             "type": "publicKey"
           },
@@ -1936,11 +1947,15 @@ export const IDL: MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -2131,10 +2146,7 @@ export const IDL: MerkleDistributor = {
         {
           "name": "admin",
           "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "The authority to set the clawback receiver and change itself."
-          ]
+          "isSigner": false
         },
         {
           "name": "payer",
@@ -2209,9 +2221,12 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
-          "name": "admin",
+          "name": "payer",
           "isMut": true,
-          "isSigner": true
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
         },
         {
           "name": "systemProgram",
@@ -3161,6 +3176,13 @@ export const IDL: MerkleDistributor = {
             "name": "base",
             "docs": [
               "Base key of distributor root"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin"
             ],
             "type": "publicKey"
           },
