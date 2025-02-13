@@ -9,7 +9,7 @@ pub fn process_set_admin(args: &Args, set_admin_args: &SetAdminArgs) {
     let program = args.get_program_client();
 
     let from_version = set_admin_args.from_version;
-    let to_version = set_admin_args.from_version;
+    let to_version = set_admin_args.to_version;
     for i in from_version..=to_version {
         let (distributor, _bump) =
             get_merkle_distributor_pda(&args.program_id, &args.base, &args.mint, i);
