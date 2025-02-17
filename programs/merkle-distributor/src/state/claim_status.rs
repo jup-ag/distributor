@@ -26,10 +26,12 @@ pub struct ClaimStatus {
     /// padding 0
     pub padding_0: [u8; 7],
     /// padding 1
-    pub padding_1: u128,
+    pub padding_1: u64,
+    /// buffer
+    pub buffer: u128,
 }
 
-const_assert!(ClaimStatus::INIT_SPACE == 152);
+const_assert!(ClaimStatus::INIT_SPACE == 160);
 
 impl ClaimStatus {
     /// Returns amount withdrawable, factoring in unlocked tokens and previous withdraws.

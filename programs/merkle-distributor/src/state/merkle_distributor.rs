@@ -29,8 +29,6 @@ pub enum ClaimType {
 #[account(zero_copy)]
 #[derive(Default, Debug, InitSpace)]
 pub struct MerkleDistributor {
-    /// The 256-bit merkle root.
-    pub root: [u8; 32],
     /// [Mint] of the token to be distributed.
     pub mint: Pubkey,
     /// base key of distributor.
@@ -45,6 +43,8 @@ pub struct MerkleDistributor {
     pub locker: Pubkey,
     /// operator for signing in permissioned merkle tree
     pub operator: Pubkey,
+    /// Distributor root use to distribute fund to all distributor
+    pub distributor_root: Pubkey,
     /// Version of the airdrop
     pub version: u64,
     /// Maximum number of tokens that can ever be claimed from this [MerkleDistributor].
@@ -63,6 +63,8 @@ pub struct MerkleDistributor {
     pub clawback_start_ts: i64,
     /// this merkle tree is activated from this slot or timestamp
     pub activation_point: u64,
+    /// The total amount has been funded
+    pub funded_amount: u64,
     /// activation type, 0 means slot, 1 means timestamp
     pub activation_type: u8,
     /// claim type
@@ -78,7 +80,10 @@ pub struct MerkleDistributor {
     // bonus multiplier
     pub airdrop_bonus: AirdropBonus,
     // padding 2
-    pub padding_2: [u128; 5],
+    pub padding_2: [u8; 8],
+    // buffer
+    pub buffer: [u128; 5],
+    
 }
 
 #[zero_copy]
@@ -223,9 +228,14 @@ impl MerkleDistributor {
             bump: [self.bump],
         }
     }
+
+    pub fn accumulate_funded_amount(&mut self, amount: u64) -> Result<()> {
+        self.funded_amount = self.funded_amount.safe_add(amount)?;
+        Ok(())
+    }
 }
 
-const_assert!(MerkleDistributor::INIT_SPACE == 440);
+const_assert!(MerkleDistributor::INIT_SPACE == 456);
 
 pub struct MerkleDistributorSigner {
     base: [u8; 32],

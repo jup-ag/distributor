@@ -3,10 +3,186 @@ export type MerkleDistributor = {
   "name": "merkle_distributor",
   "instructions": [
     {
-      "name": "newDistributor",
+      "name": "newDistributorRoot",
       "docs": [
         "ADMIN FUNCTIONS ////"
       ],
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[DistributorRoot]"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "DistributorRoot"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxClaimAmount",
+          "type": "u64"
+        },
+        {
+          "name": "maxDistributor",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fundDistributorRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]"
+          ],
+          "relations": [
+            "mint"
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer."
+          ]
+        },
+        {
+          "name": "payerToken",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Payer Token Account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "newDistributor",
       "accounts": [
         {
           "name": "distributor",
@@ -42,6 +218,14 @@ export type MerkleDistributor = {
           }
         },
         {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
           "name": "base",
           "isMut": false,
           "isSigner": true,
@@ -67,7 +251,7 @@ export type MerkleDistributor = {
         },
         {
           "name": "tokenVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "Token vault",
@@ -76,11 +260,15 @@ export type MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -98,6 +286,11 @@ export type MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -108,6 +301,129 @@ export type MerkleDistributor = {
           }
         }
       ]
+    },
+    {
+      "name": "createCanopyTree",
+      "accounts": [
+        {
+          "name": "canopyTree",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[CanopyTree]"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "CanopyTree"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "distributor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "distributor",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "depth",
+          "type": "u8"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "canopyNodes",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fundMerkleDistributorFromRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault containing the tokens to distribute to distributor vault."
+          ]
+        },
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "distributorVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor vault"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
     },
     {
       "name": "closeDistributor",
@@ -373,6 +689,17 @@ export type MerkleDistributor = {
           ]
         },
         {
+          "name": "canopyTree",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [CanopyTree]."
+          ],
+          "relations": [
+            "distributor"
+          ]
+        },
+        {
           "name": "claimStatus",
           "isMut": true,
           "isSigner": false,
@@ -457,6 +784,10 @@ export type MerkleDistributor = {
         {
           "name": "amountLocked",
           "type": "u64"
+        },
+        {
+          "name": "leafIndex",
+          "type": "u32"
         },
         {
           "name": "proof",
@@ -550,6 +881,17 @@ export type MerkleDistributor = {
           ],
           "relations": [
             "locker"
+          ]
+        },
+        {
+          "name": "canopyTree",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [CanopyTree]."
+          ],
+          "relations": [
+            "distributor"
           ]
         },
         {
@@ -652,6 +994,10 @@ export type MerkleDistributor = {
         {
           "name": "amountLocked",
           "type": "u64"
+        },
+        {
+          "name": "leafIndex",
+          "type": "u32"
         },
         {
           "name": "proof",
@@ -754,6 +1100,67 @@ export type MerkleDistributor = {
   ],
   "accounts": [
     {
+      "name": "canopyTree",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "root",
+            "docs": [
+              "The 256-bit merkle root."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "The depth of merkle will store onchain",
+              "With `depth``: total levels from the root to leaves: depth + 1"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "nodes",
+            "docs": [
+              "A vector of node hashes representing canopy leaves node"
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "distributor",
+            "docs": [
+              "The distributor associated with this Merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "claimStatus",
       "docs": [
         "Holds whether or not a claimant has claimed tokens."
@@ -761,6 +1168,13 @@ export type MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "admin of merkle tree, store for for testing purpose"
+            ],
+            "type": "publicKey"
+          },
           {
             "name": "distributor",
             "docs": [
@@ -797,18 +1211,142 @@ export type MerkleDistributor = {
             "type": "u64"
           },
           {
+            "name": "bonusAmount",
+            "docs": [
+              "Bonus amount"
+            ],
+            "type": "u64"
+          },
+          {
             "name": "closable",
             "docs": [
               "indicate that whether admin can close this account, for testing purpose"
             ],
-            "type": "bool"
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "padding1",
+            "docs": [
+              "padding 1"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "buffer"
+            ],
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "distributorRoot",
+      "docs": [
+        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Mint of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "Base key of distributor root"
+            ],
+            "type": "publicKey"
           },
           {
             "name": "admin",
             "docs": [
-              "admin of merkle tree, store for for testing purpose"
+              "Admin"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "distributorRootVault",
+            "docs": [
+              "Token Address of distributor root vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "maxClaimAmount",
+            "docs": [
+              "Max claim amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxDistributor",
+            "docs": [
+              "Max distributor"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFundedAmount",
+            "docs": [
+              "total funded amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalDistributorCreated",
+            "docs": [
+              "total escrow created"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer for future use or alignment."
+            ],
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
           }
         ]
       }
@@ -821,18 +1359,6 @@ export type MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "root",
-            "docs": [
-              "The 256-bit merkle root."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
           {
             "name": "mint",
             "docs": [
@@ -879,6 +1405,13 @@ export type MerkleDistributor = {
             "name": "operator",
             "docs": [
               "operator for signing in permissioned merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "distributorRoot",
+            "docs": [
+              "Distributor root use to distribute fund to all distributor"
             ],
             "type": "publicKey"
           },
@@ -946,6 +1479,13 @@ export type MerkleDistributor = {
             "type": "u64"
           },
           {
+            "name": "fundedAmount",
+            "docs": [
+              "The total amount has been funded"
+            ],
+            "type": "u64"
+          },
+          {
             "name": "activationType",
             "docs": [
               "activation type, 0 means slot, 1 means timestamp"
@@ -997,6 +1537,24 @@ export type MerkleDistributor = {
             "type": {
               "defined": "AirdropBonus"
             }
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "buffer",
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
           }
         ]
       }
@@ -1011,15 +1569,6 @@ export type MerkleDistributor = {
           {
             "name": "version",
             "type": "u64"
-          },
-          {
-            "name": "root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           },
           {
             "name": "totalClaim",
@@ -1304,7 +1853,7 @@ export type MerkleDistributor = {
     {
       "code": 6025,
       "name": "SameOperator",
-      "msg": "same operator"
+      "msg": "Same operator"
     },
     {
       "code": 6026,
@@ -1315,6 +1864,21 @@ export type MerkleDistributor = {
       "code": 6027,
       "name": "EscrowIsNotMaxLock",
       "msg": "Escrow is not max lock"
+    },
+    {
+      "code": 6028,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid remaining accounts"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidAccount",
+      "msg": "Invalid account"
+    },
+    {
+      "code": 6030,
+      "name": "CanopyRootMissMatch",
+      "msg": "Canopy root miss match with real root"
     }
   ]
 };
@@ -1324,10 +1888,186 @@ export const IDL: MerkleDistributor = {
   "name": "merkle_distributor",
   "instructions": [
     {
-      "name": "newDistributor",
+      "name": "newDistributorRoot",
       "docs": [
         "ADMIN FUNCTIONS ////"
       ],
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[DistributorRoot]"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "DistributorRoot"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "base"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "account": "Mint",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "base",
+          "isMut": false,
+          "isSigner": true,
+          "docs": [
+            "Base key of the distributor."
+          ]
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxClaimAmount",
+          "type": "u64"
+        },
+        {
+          "name": "maxDistributor",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fundDistributorRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]"
+          ],
+          "relations": [
+            "mint"
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault"
+          ]
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer."
+          ]
+        },
+        {
+          "name": "payerToken",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Payer Token Account."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [Token] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "newDistributor",
       "accounts": [
         {
           "name": "distributor",
@@ -1363,6 +2103,14 @@ export const IDL: MerkleDistributor = {
           }
         },
         {
+          "name": "distributorRoot",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
           "name": "base",
           "isMut": false,
           "isSigner": true,
@@ -1388,7 +2136,7 @@ export const IDL: MerkleDistributor = {
         },
         {
           "name": "tokenVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "Token vault",
@@ -1397,11 +2145,15 @@ export const IDL: MerkleDistributor = {
         },
         {
           "name": "admin",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
           "isMut": true,
           "isSigner": true,
           "docs": [
-            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
-            "Also has the authority to set the clawback receiver and change itself."
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
           ]
         },
         {
@@ -1419,6 +2171,11 @@ export const IDL: MerkleDistributor = {
           "docs": [
             "The [Token] program."
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1429,6 +2186,129 @@ export const IDL: MerkleDistributor = {
           }
         }
       ]
+    },
+    {
+      "name": "createCanopyTree",
+      "accounts": [
+        {
+          "name": "canopyTree",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "[CanopyTree]"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "CanopyTree"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "distributor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "distributor",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Payer wallet, responsible for creating the distributor and paying for the transaction."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [System] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "depth",
+          "type": "u8"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "canopyNodes",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "fundMerkleDistributorFromRoot",
+      "accounts": [
+        {
+          "name": "distributorRoot",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [DistributorRoot]."
+          ]
+        },
+        {
+          "name": "distributorRootVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor root vault containing the tokens to distribute to distributor vault."
+          ]
+        },
+        {
+          "name": "distributor",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "The [MerkleDistributor]."
+          ]
+        },
+        {
+          "name": "distributorVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Distributor vault"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
     },
     {
       "name": "closeDistributor",
@@ -1694,6 +2574,17 @@ export const IDL: MerkleDistributor = {
           ]
         },
         {
+          "name": "canopyTree",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [CanopyTree]."
+          ],
+          "relations": [
+            "distributor"
+          ]
+        },
+        {
           "name": "claimStatus",
           "isMut": true,
           "isSigner": false,
@@ -1778,6 +2669,10 @@ export const IDL: MerkleDistributor = {
         {
           "name": "amountLocked",
           "type": "u64"
+        },
+        {
+          "name": "leafIndex",
+          "type": "u32"
         },
         {
           "name": "proof",
@@ -1871,6 +2766,17 @@ export const IDL: MerkleDistributor = {
           ],
           "relations": [
             "locker"
+          ]
+        },
+        {
+          "name": "canopyTree",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The [CanopyTree]."
+          ],
+          "relations": [
+            "distributor"
           ]
         },
         {
@@ -1973,6 +2879,10 @@ export const IDL: MerkleDistributor = {
         {
           "name": "amountLocked",
           "type": "u64"
+        },
+        {
+          "name": "leafIndex",
+          "type": "u32"
         },
         {
           "name": "proof",
@@ -2075,6 +2985,67 @@ export const IDL: MerkleDistributor = {
   ],
   "accounts": [
     {
+      "name": "canopyTree",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "root",
+            "docs": [
+              "The 256-bit merkle root."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "The depth of merkle will store onchain",
+              "With `depth``: total levels from the root to leaves: depth + 1"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "nodes",
+            "docs": [
+              "A vector of node hashes representing canopy leaves node"
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          },
+          {
+            "name": "distributor",
+            "docs": [
+              "The distributor associated with this Merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "claimStatus",
       "docs": [
         "Holds whether or not a claimant has claimed tokens."
@@ -2082,6 +3053,13 @@ export const IDL: MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "admin of merkle tree, store for for testing purpose"
+            ],
+            "type": "publicKey"
+          },
           {
             "name": "distributor",
             "docs": [
@@ -2118,18 +3096,142 @@ export const IDL: MerkleDistributor = {
             "type": "u64"
           },
           {
+            "name": "bonusAmount",
+            "docs": [
+              "Bonus amount"
+            ],
+            "type": "u64"
+          },
+          {
             "name": "closable",
             "docs": [
               "indicate that whether admin can close this account, for testing purpose"
             ],
-            "type": "bool"
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "padding1",
+            "docs": [
+              "padding 1"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "buffer"
+            ],
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "distributorRoot",
+      "docs": [
+        "Parent Account: Authority of parent vault use to distribute fund to all distributors"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding0",
+            "docs": [
+              "padding 0"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Mint of the token to be distributed."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "base",
+            "docs": [
+              "Base key of distributor root"
+            ],
+            "type": "publicKey"
           },
           {
             "name": "admin",
             "docs": [
-              "admin of merkle tree, store for for testing purpose"
+              "Admin"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "distributorRootVault",
+            "docs": [
+              "Token Address of distributor root vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "maxClaimAmount",
+            "docs": [
+              "Max claim amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxDistributor",
+            "docs": [
+              "Max distributor"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFundedAmount",
+            "docs": [
+              "total funded amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalDistributorCreated",
+            "docs": [
+              "total escrow created"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "buffer",
+            "docs": [
+              "Buffer for future use or alignment."
+            ],
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
           }
         ]
       }
@@ -2142,18 +3244,6 @@ export const IDL: MerkleDistributor = {
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "root",
-            "docs": [
-              "The 256-bit merkle root."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
           {
             "name": "mint",
             "docs": [
@@ -2200,6 +3290,13 @@ export const IDL: MerkleDistributor = {
             "name": "operator",
             "docs": [
               "operator for signing in permissioned merkle tree"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "distributorRoot",
+            "docs": [
+              "Distributor root use to distribute fund to all distributor"
             ],
             "type": "publicKey"
           },
@@ -2267,6 +3364,13 @@ export const IDL: MerkleDistributor = {
             "type": "u64"
           },
           {
+            "name": "fundedAmount",
+            "docs": [
+              "The total amount has been funded"
+            ],
+            "type": "u64"
+          },
+          {
             "name": "activationType",
             "docs": [
               "activation type, 0 means slot, 1 means timestamp"
@@ -2318,6 +3422,24 @@ export const IDL: MerkleDistributor = {
             "type": {
               "defined": "AirdropBonus"
             }
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "buffer",
+            "type": {
+              "array": [
+                "u128",
+                5
+              ]
+            }
           }
         ]
       }
@@ -2332,15 +3454,6 @@ export const IDL: MerkleDistributor = {
           {
             "name": "version",
             "type": "u64"
-          },
-          {
-            "name": "root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           },
           {
             "name": "totalClaim",
@@ -2625,7 +3738,7 @@ export const IDL: MerkleDistributor = {
     {
       "code": 6025,
       "name": "SameOperator",
-      "msg": "same operator"
+      "msg": "Same operator"
     },
     {
       "code": 6026,
@@ -2636,6 +3749,21 @@ export const IDL: MerkleDistributor = {
       "code": 6027,
       "name": "EscrowIsNotMaxLock",
       "msg": "Escrow is not max lock"
+    },
+    {
+      "code": 6028,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid remaining accounts"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidAccount",
+      "msg": "Invalid account"
+    },
+    {
+      "code": 6030,
+      "name": "CanopyRootMissMatch",
+      "msg": "Canopy root miss match with real root"
     }
   ]
 };

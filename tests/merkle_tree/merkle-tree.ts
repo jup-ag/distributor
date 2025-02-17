@@ -28,7 +28,10 @@ function bufArrToHexArr(arr: Buffer[]): string[] {
 }
 
 function sortAndConcat(...args: Buffer[]): Buffer {
-  return Buffer.concat([Buffer.from([1]), Buffer.concat([...args].sort(Buffer.compare.bind(null)))]);
+  return Buffer.concat([
+    Buffer.from([1]),
+    Buffer.concat([...args].sort(Buffer.compare.bind(null))),
+  ]);
 }
 
 export class MerkleTree {
@@ -99,6 +102,11 @@ export class MerkleTree {
     return Buffer.from(sha256(sortAndConcat(first, second)), "hex");
   }
 
+  getCanopyNodes(depth: number): Buffer[] {
+    // if set depth = 2, it's mean we will store all nodes at layer 2 of merkle tree onchain.
+    return this._layers[this._layers.length - depth - 1];
+  }
+
   getRoot(): Buffer {
     const root = this._layers[this._layers.length - 1]?.[0];
     invariant(root, "root");
@@ -111,7 +119,6 @@ export class MerkleTree {
 
   getProof(el: Buffer): Buffer[] {
     const initialIdx = this._bufferElementPositionIndex[el.toString("hex")];
-
     if (typeof initialIdx !== "number") {
       throw new Error("Element does not exist in Merkle tree");
     }
@@ -119,15 +126,50 @@ export class MerkleTree {
     let idx = initialIdx;
     return this._layers.reduce((proof, layer) => {
       const pairElement = getPairElement(idx, layer);
-
       if (pairElement) {
         proof.push(pairElement);
       }
 
       idx = Math.floor(idx / 2);
-
       return proof;
     }, []);
+  }
+
+  getPartialProof(
+    el: Buffer,
+    depth: number
+  ): { proof: Buffer[]; index: number } {
+    const initialIdx = this._bufferElementPositionIndex[el.toString("hex")];
+
+    if (typeof initialIdx !== "number") {
+      throw new Error("Element does not exist in Merkle tree");
+    }
+
+    const partialLayers = this._layers.slice(0, this._layers.length - depth - 1);
+
+    const { proof, idx, leafIndex } = partialLayers.reduce(
+      (acc, layer) => {
+        const pairElement = getPairElement(acc.idx, layer);
+        if (pairElement) {
+          acc.proof.push(pairElement);
+          if (acc.leafIndex === null) {
+            acc.leafIndex = acc.idx;
+          }
+        }
+        acc.idx = Math.floor(acc.idx / 2);
+        return acc;
+      },
+      {
+        proof: [] as Buffer[],
+        idx: initialIdx,
+        leafIndex: null as number | null,
+      }
+    );
+
+    // If no proof elements were found, set leafIndex to the final idx
+    const finalLeafIndex = proof.length ? leafIndex! : idx;
+
+    return { proof, index: finalLeafIndex };
   }
 
   getHexProof(el: Buffer): string[] {

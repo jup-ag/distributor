@@ -6,12 +6,11 @@ use anchor_spl::{
     token,
     token::{Token, TokenAccount},
 };
-use jito_merkle_verify::verify;
 
 use crate::{
     error::ErrorCode,
     state::{
-        claim_status::ClaimStatus, claimed_event::NewClaimEvent,
+        canopy_tree::CanopyTree, claim_status::ClaimStatus, claimed_event::NewClaimEvent,
         merkle_distributor::MerkleDistributor,
     },
 };
@@ -27,6 +26,10 @@ pub struct NewClaim<'info> {
     /// The [MerkleDistributor].
     #[account(mut)]
     pub distributor: AccountLoader<'info, MerkleDistributor>,
+
+    /// The [CanopyTree].
+    #[account(has_one = distributor)]
+    pub canopy_tree: Account<'info, CanopyTree>,
 
     /// Claim status PDA
     #[account(
@@ -84,10 +87,11 @@ pub fn handle_new_claim(
     ctx: Context<NewClaim>,
     amount_unlocked: u64,
     amount_locked: u64,
+    leaf_index: u32,
     proof: Vec<[u8; 32]>,
 ) -> Result<()> {
     let mut distributor = ctx.accounts.distributor.load_mut()?;
-
+    let canopy_tree = &ctx.accounts.canopy_tree;
     require!(!distributor.clawed_back(), ErrorCode::ClaimExpired);
 
     // check operator
@@ -117,10 +121,8 @@ pub fn handle_new_claim(
 
     let node = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
 
-    require!(
-        verify(proof, distributor.root, node.to_bytes()),
-        ErrorCode::InvalidProof
-    );
+    let verify_leaf = canopy_tree.verify_leaf(proof, node.to_bytes(), leaf_index);
+    require!(verify_leaf, ErrorCode::InvalidProof);
 
     let mut claim_status = ctx.accounts.claim_status.load_init()?;
 
