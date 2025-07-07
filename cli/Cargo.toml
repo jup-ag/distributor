@@ -28,3 +28,16 @@ tokio-postgres = "0.7"
 tokio = { version = "1.0", features = ["full"] }
 hex = "0.4"
 futures = "0.3"
+chrono = "0.4"
+
+[[bin]]
+name = "cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "generate_csv"
+path = "src/bin/generate_csv.rs"
+
+[[bin]]
+name = "generate_test_wallets"
+path = "../scripts/generate_test_wallets.rs"

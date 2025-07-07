@@ -54,8 +54,17 @@ pub fn ui_amount_to_token_amount(amount: &str, decimals: u32) -> u64 {
 
 impl TreeNode {
     pub fn from_csv(entry: CsvEntry, decimals: u32) -> Self {
+        let claimant = match Pubkey::from_str(entry.pubkey.as_str()) {
+            Ok(pubkey) => pubkey,
+            Err(e) => {
+                eprintln!("❌ Failed to parse pubkey '{}': {:?}", entry.pubkey, e);
+                eprintln!("   Pubkey length: {} characters", entry.pubkey.len());
+                panic!("Invalid pubkey format in CSV");
+            }
+        };
+
         let node = Self {
-            claimant: Pubkey::from_str(entry.pubkey.as_str()).unwrap(),
+            claimant,
             amount: ui_amount_to_token_amount(entry.amount.as_str(), decimals),
             locked_amount: ui_amount_to_token_amount(entry.locked_amount.as_str(), decimals),
             proof: None,
