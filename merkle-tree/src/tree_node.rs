@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 use crate::csv_entry::CsvEntry;
+use anchor_client::solana_sdk::hash::Hash;
+use anchor_lang::solana_program::{hash::hashv, pubkey::Pubkey};
 use rust_decimal::{prelude::FromPrimitive, Decimal};
 use serde::{Deserialize, Serialize};
-use solana_program::{hash::hashv, pubkey::Pubkey};
-use solana_sdk::hash::Hash;
 
 /// Represents the claim information for an account.
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]

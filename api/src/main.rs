@@ -6,10 +6,10 @@ use std::{
     thread, time,
 };
 
+use anchor_lang::solana_program::pubkey::Pubkey;
 use clap::Parser;
 use jito_merkle_tree::{airdrop_merkle_tree::AirdropMerkleTree, utils::get_merkle_distributor_pda};
 use router::RouterState;
-use solana_program::pubkey::Pubkey;
 use tracing::{info, instrument};
 
 use crate::{

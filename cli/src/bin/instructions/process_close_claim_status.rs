@@ -1,4 +1,7 @@
-use anchor_client::solana_client::rpc_filter::{Memcmp, RpcFilterType};
+use anchor_client::{
+    solana_client::rpc_filter::{Memcmp, RpcFilterType},
+    solana_sdk::signer::Signer,
+};
 use merkle_distributor::state::claim_status::ClaimStatus;
 
 use crate::*;

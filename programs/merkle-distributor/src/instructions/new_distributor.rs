@@ -121,7 +121,7 @@ pub fn handle_new_distributor(
 
     let distributor = &mut ctx.accounts.distributor;
 
-    distributor.bump = *ctx.bumps.get("distributor").unwrap();
+    distributor.bump = ctx.bumps.distributor;
     distributor.version = version;
     distributor.root = root;
     distributor.mint = ctx.accounts.mint.key();

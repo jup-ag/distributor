@@ -6,6 +6,7 @@ use std::{
     time::Duration,
 };
 
+use anchor_lang::solana_program::pubkey::Pubkey;
 use axum::{
     body::Body,
     error_handling::HandleErrorLayer,
@@ -17,7 +18,6 @@ use axum::{
 use http::Request;
 use jito_merkle_tree::{airdrop_merkle_tree::UserProof, tree_node::TreeNode};
 use serde_derive::{Deserialize, Serialize};
-use solana_program::pubkey::Pubkey;
 
 use tower::{
     buffer::BufferLayer, limit::RateLimitLayer, load_shed::LoadShedLayer, timeout::TimeoutLayer,

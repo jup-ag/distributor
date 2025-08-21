@@ -1,5 +1,5 @@
+use anchor_client::solana_sdk::{compute_budget::ComputeBudgetInstruction, signer::Signer};
 use anyhow::Ok;
-use solana_sdk::compute_budget::ComputeBudgetInstruction;
 
 use crate::*;
 
