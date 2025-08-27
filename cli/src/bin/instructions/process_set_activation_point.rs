@@ -1,4 +1,4 @@
-use solana_sdk::compute_budget::ComputeBudgetInstruction;
+use anchor_client::solana_sdk::{compute_budget::ComputeBudgetInstruction, signer::Signer};
 
 use crate::*;
 

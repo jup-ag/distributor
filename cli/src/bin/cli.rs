@@ -4,13 +4,23 @@ extern crate merkle_distributor;
 pub mod instructions;
 use std::{fs, path::PathBuf, rc::Rc, str::FromStr};
 
+use anchor_client::solana_client::rpc_client::{RpcClient, SerializableTransaction};
+use anchor_client::solana_sdk::{
+    account::Account, commitment_config::CommitmentConfig, signer::keypair::Keypair,
+    transaction::Transaction,
+};
 use anchor_client::{
     solana_sdk::signer::keypair::read_keypair_file, Client as AnchorClient, Cluster, Program,
 };
+use anchor_lang::solana_program::{clock::DEFAULT_MS_PER_SLOT, instruction::Instruction};
 use anchor_lang::{
     prelude::{Clock, Pubkey},
     solana_program::sysvar,
     AccountDeserialize, InstructionData, Key, ToAccountMetas,
+};
+use anchor_spl::associated_token::spl_associated_token_account;
+use anchor_spl::associated_token::spl_associated_token_account::{
+    get_associated_token_address, instruction::create_associated_token_account,
 };
 use anchor_spl::token::{self, TokenAccount};
 use anyhow::Result;
@@ -23,17 +33,6 @@ use jito_merkle_tree::{
     utils::{get_claim_status_pda, get_merkle_distributor_pda},
 };
 use merkle_distributor::state::merkle_distributor::MerkleDistributor;
-use solana_program::{clock::DEFAULT_MS_PER_SLOT, instruction::Instruction};
-use solana_rpc_client::rpc_client::{RpcClient, SerializableTransaction};
-use solana_sdk::{
-    account::Account,
-    commitment_config::CommitmentConfig,
-    signer::{keypair::Keypair, Signer},
-    transaction::Transaction,
-};
-use spl_associated_token_account::{
-    get_associated_token_address, instruction::create_associated_token_account,
-};
 
 use crate::instructions::*;
 #[derive(Parser, Debug)]

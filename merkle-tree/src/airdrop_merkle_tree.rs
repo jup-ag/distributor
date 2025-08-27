@@ -6,10 +6,10 @@ use std::{
     result,
 };
 
+use anchor_lang::solana_program::{hash::hashv, pubkey::Pubkey};
 use indexmap::IndexMap;
 use jito_merkle_verify::verify;
 use serde::{Deserialize, Serialize};
-use solana_program::{hash::hashv, pubkey::Pubkey};
 
 use crate::{
     csv_entry::CsvEntry,
@@ -261,11 +261,11 @@ impl AirdropMerkleTree {
 mod tests {
     use std::path::PathBuf;
 
-    use solana_program::{pubkey, pubkey::Pubkey};
-    use solana_sdk::{
+    use anchor_client::solana_sdk::{
         signature::{EncodableKey, Keypair},
         signer::Signer,
     };
+    use anchor_lang::solana_program::{pubkey, pubkey::Pubkey};
 
     use super::*;
 

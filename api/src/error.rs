@@ -1,5 +1,7 @@
 use std::convert::Infallible;
 
+use anchor_client::solana_client::rpc_request::RpcError;
+use anchor_lang::solana_program::pubkey::ParsePubkeyError;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -8,8 +10,6 @@ use axum::{
 use jito_merkle_tree::error::MerkleTreeError;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::json;
-use solana_program::pubkey::ParsePubkeyError;
-use solana_rpc_client_api::client_error::Error as RpcError;
 use thiserror::Error;
 use tracing::log::error;
 
