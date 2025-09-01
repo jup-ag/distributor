@@ -89,11 +89,12 @@ pub mod merkle_distributor {
     #[allow(clippy::result_large_err)]
     pub fn new_claim(
         ctx: Context<NewClaim>,
+        index: u32,
         amount_unlocked: u64,
         amount_locked: u64,
         proof: Vec<[u8; 32]>,
     ) -> Result<()> {
-        handle_new_claim(ctx, amount_unlocked, amount_locked, proof)
+        handle_new_claim(ctx, index, amount_unlocked, amount_locked, proof)
     }
 
     #[allow(clippy::result_large_err)]

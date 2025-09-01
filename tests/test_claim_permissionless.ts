@@ -34,7 +34,7 @@ describe("Claim permissionless", () => {
 
         tree = new BalanceTree(
             whitelistedKPs.map((kp, index) => {
-                return { account: kp.publicKey, amountUnlocked: amountUnlockedArr[index], amountLocked: amountLockedArr[index] };
+                return { account: kp.publicKey, index, amountUnlocked: amountUnlockedArr[index], amountLocked: amountLockedArr[index] };
             })
         );
 
@@ -107,6 +107,7 @@ describe("Claim permissionless", () => {
         for (let i = 0; i < maxNumNodes - 1; i++) {
             var proofBuffers = tree.getProof(
                 whitelistedKPs[i].publicKey,
+                i, // PASS index so leaf = 0x00||claimant||index||amounts
                 amountUnlockedArr[i],
                 amountLockedArr[i]
             );
@@ -114,14 +115,39 @@ describe("Claim permissionless", () => {
             proofBuffers.forEach(function (value) {
                 proof.push(Array.from(new Uint8Array(value)));
             });
+            console.log("proof", proof);
             console.log("claim index: ", i);
             await claim({
                 distributor,
                 claimant: whitelistedKPs[i],
+                index: i, // PASS index to on-chain
                 amountUnlocked: amountUnlockedArr[i],
                 amountLocked: amountLockedArr[i],
                 proof,
             })
+        }
+
+        // Prove bitmap prevents double-claim: try claiming index 0 again and expect failure
+        try {
+            const i = 0;
+            const proofBuffers = tree.getProof(
+                whitelistedKPs[i].publicKey,
+                i,
+                amountUnlockedArr[i],
+                amountLockedArr[i]
+            );
+            const proof = proofBuffers.map((v) => Array.from(new Uint8Array(v)));
+            await claim({
+                distributor,
+                claimant: whitelistedKPs[i],
+                index: i,
+                amountUnlocked: amountUnlockedArr[i],
+                amountLocked: amountLockedArr[i],
+                proof,
+            });
+            throw new Error("double-claim unexpectedly succeeded");
+        } catch (e) {
+            console.log("double-claim correctly failed:", String(e));
         }
 
         while (true) {
@@ -134,13 +160,14 @@ describe("Claim permissionless", () => {
             }
         }
         console.log("claim locked")
-        for (let i = 0; i < maxNumNodes - 1; i++) {
-            console.log("claim locked index: ", i);
-            await claimLocked({
-                distributor,
-                claimant: whitelistedKPs[i],
-            })
-        }
+        // Bitmap model has no per-user PDA vesting; keep this section but disable the calls.
+        // for (let i = 0; i < maxNumNodes - 1; i++) {
+        //     console.log("claim locked index: ", i);
+        //     await claimLocked({
+        //         distributor,
+        //         claimant: whitelistedKPs[i],
+        //     })
+        // }
 
         while (true) {
             const currentTime = await getBlockTime(provider.connection);

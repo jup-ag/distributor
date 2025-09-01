@@ -9,6 +9,9 @@ use solana_sdk::hash::Hash;
 /// Represents the claim information for an account.
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct TreeNode {
+    /// Unique index in the merkle tree (bitmap bit position)
+    pub index: u32,
+
     /// Pubkey of the claimant; will be responsible for signing the claim
     pub claimant: Pubkey,
     /// Amount that claimant can claim
@@ -20,11 +23,14 @@ pub struct TreeNode {
 }
 
 impl TreeNode {
+    /// Leaf = hash( LEAF_PREFIX || hash( claimant || index_be || amount_be || locked_be ) )
+    /// Make sure this exactly matches handle_new_claim.
     pub fn hash(&self) -> Hash {
-        hashv(&[
+     hashv(&[
             &self.claimant.to_bytes(),
-            &self.amount.to_le_bytes(),
-            &self.locked_amount.to_le_bytes(),
+            &self.index.to_be_bytes(),
+            &self.amount.to_be_bytes(),
+            &self.locked_amount.to_be_bytes(),
         ])
     }
     /// Return total amount for this claimant
@@ -40,6 +46,12 @@ impl TreeNode {
     pub fn locked_amount(&self) -> u64 {
         self.locked_amount
     }
+
+    /// Convenience: set index after CSV load
+    pub fn with_index(mut self, index: u32) -> Self {
+        self.index = index;
+        self
+    }
 }
 
 /// Converts a ui amount to a token amount (with decimals)
@@ -53,14 +65,14 @@ pub fn ui_amount_to_token_amount(amount: &str, decimals: u32) -> u64 {
 }
 
 impl TreeNode {
-    pub fn from_csv(entry: CsvEntry, decimals: u32) -> Self {
-        let node = Self {
+    pub fn from_csv(entry: CsvEntry, decimals: u32, index: u32) -> Self {
+        Self {
+            index, // can fill later with enumerate() or with_index()
             claimant: Pubkey::from_str(entry.pubkey.as_str()).unwrap(),
             amount: ui_amount_to_token_amount(entry.amount.as_str(), decimals),
             locked_amount: ui_amount_to_token_amount(entry.locked_amount.as_str(), decimals),
             proof: None,
-        };
-        node
+        }
     }
 }
 
@@ -89,7 +101,8 @@ mod tests {
 
         let tree_nodes: Vec<TreeNode> = entries
             .into_iter()
-            .map(|x| TreeNode::from_csv(x, decimals))
+            .enumerate()
+            .map(|(i, x)| TreeNode::from_csv(x, decimals, i as u32))
             .collect();
 
         assert_eq!(tree_nodes[0].amount, 1000123456);
@@ -98,5 +111,12 @@ mod tests {
         assert_eq!(tree_nodes[1].locked_amount, 8123456);
         assert_eq!(tree_nodes[2].amount, 1500123456);
         assert_eq!(tree_nodes[2].locked_amount, 7123456);
+
+        // sanity: hash should be stable and depend on index
+        let h0 = tree_nodes[0].hash();
+        let mut node_with_different_index = tree_nodes[0].clone();
+        node_with_different_index.index = 1;
+        let h1 = node_with_different_index.hash();
+        assert_ne!(h0, h1);
     }
 }

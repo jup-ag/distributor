@@ -14,6 +14,7 @@ solana-program = { workspace = true }
 solana-sdk = { workspace = true }
 thiserror = { workspace = true }
 rust_decimal = { workspace = true }
+bytemuck = {workspace = true}
 
 [dev-dependencies]
 hex = { workspace = true }

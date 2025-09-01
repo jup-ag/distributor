@@ -143,6 +143,7 @@ export async function createNewDistributor(
 
 export interface ClaimParams {
     claimant: Keypair;
+    index: number,
     operator?: Keypair;
     distributor: PublicKey,
     amountUnlocked: BN;
@@ -158,29 +159,24 @@ export async function claim(
     const program = createDistributorProgram(new Wallet(claimant));
 
     let distributorState = await program.account.merkleDistributor.fetch(distributor);
-    let claimStatus = deriveClaimStatus(distributor, claimant.publicKey);
     let to = await getOrCreateAssociatedTokenAccountWrap(program.provider.connection, claimant, distributorState.mint, claimant.publicKey);
 
     if (operator == null) {
-        await program.methods.newClaim(amountUnlocked, amountLocked, proof).accounts({
+        await program.methods.newClaim(params.index, amountUnlocked, amountLocked, proof).accounts({
             distributor,
             claimant: claimant.publicKey,
-            claimStatus,
             from: distributorState.tokenVault,
             to,
-            systemProgram: web3.SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             operator: null,
         }).rpc().catch(console.log).then(console.log);
     } else {
         // user sign tx firstly (need to verify signature to avoid spaming)
-        let tx = await program.methods.newClaim(amountUnlocked, amountLocked, proof).accounts({
+        let tx = await program.methods.newClaim(params.index, amountUnlocked, amountLocked, proof).accounts({
             distributor,
             claimant: claimant.publicKey,
-            claimStatus,
             from: distributorState.tokenVault,
             to,
-            systemProgram: web3.SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             operator: operator.publicKey,
         }).transaction();

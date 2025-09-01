@@ -76,12 +76,18 @@ impl AirdropMerkleTree {
                 .or_insert_with(|| tree_node); // If not exists, insert a new entry
         }
 
-        // Convert IndexMap back to Vec while preserving the order
+        // Convert back to Vec (order preserved) and set final indices
         let mut tree_nodes: Vec<TreeNode> = tree_nodes_map.values().cloned().collect();
 
+        // the new indices might take over from the combination. Set it to the main tree for correct proof
+        for (i, n) in tree_nodes.iter_mut().enumerate() {
+            n.index = i as u32;
+        }
+
+        // Hash AFTER indices are set
         let hashed_nodes = tree_nodes
             .iter()
-            .map(|claim_info| claim_info.hash().to_bytes())
+            .map(|n| n.hash().to_bytes())
             .collect::<Vec<_>>();
 
         let tree = MerkleTree::new(&hashed_nodes[..], true);
@@ -117,23 +123,19 @@ impl AirdropMerkleTree {
         let csv_entries = CsvEntry::new_from_file(path)?;
         let tree_nodes: Vec<TreeNode> = csv_entries
             .into_iter()
-            .map(|x| TreeNode::from_csv(x, decimals))
+            .enumerate()
+            .map(|(i, x)| TreeNode::from_csv(x, decimals, i as u32))   // <-- pass index
             .collect();
-        let tree = Self::new(tree_nodes, version)?;
-        Ok(tree)
+        Self::new(tree_nodes, version)
     }
 
-    pub fn new_from_entries(
-        csv_entries: Vec<CsvEntry>,
-        version: u64,
-        decimals: u32,
-    ) -> Result<Self> {
+    pub fn new_from_entries(csv_entries: Vec<CsvEntry>, version: u64, decimals: u32) -> Result<Self> {
         let tree_nodes: Vec<TreeNode> = csv_entries
             .into_iter()
-            .map(|x| TreeNode::from_csv(x, decimals))
+            .enumerate()
+            .map(|(i, x)| TreeNode::from_csv(x, decimals, i as u32))   // <-- pass index
             .collect();
-        let tree = Self::new(tree_nodes, version)?;
-        Ok(tree)
+        Self::new(tree_nodes, version)
     }
 
     /// Load a serialized merkle tree from file path
@@ -236,10 +238,10 @@ impl AirdropMerkleTree {
         );
 
         // Verify each node against the root
-        for (i, _node) in hashed_nodes.iter().enumerate() {
+        for (i, _) in hashed_nodes.iter().enumerate() {
             let node = hashv(&[LEAF_PREFIX, &hashed_nodes[i]]);
-            let proof = get_proof(&mk, i);
 
+            let proof = get_proof(&mk, i);
             if !verify(proof, root, node.to_bytes()) {
                 return Err(MerkleValidationError("invalid merkle proof".to_string()));
             }
@@ -286,9 +288,10 @@ mod tests {
             rand::random::<u64>() % 100 * u64::pow(10, 9)
         }
 
-        for _ in 0..num_nodes {
+        for i in 0..num_nodes {
             // choose amount unlocked and amount locked as a random u64 between 0 and 100
             tree_nodes.push(TreeNode {
+                index: i as u32,
                 claimant: new_test_key(),
                 amount: rand_balance(),
                 locked_amount: rand_balance(),
@@ -304,6 +307,7 @@ mod tests {
     #[test]
     fn test_verify_new_merkle_tree() {
         let tree_nodes = vec![TreeNode {
+            index: 0,
             claimant: Pubkey::default(),
             amount: 2,
             locked_amount: 0,
@@ -315,21 +319,23 @@ mod tests {
 
     #[test]
     fn test_write_merkle_distributor_to_file() {
-        // create a merkle root from 3 tree nodes and write it to file, then read it
         let tree_nodes = vec![
             TreeNode {
+                index: 0,
                 claimant: pubkey!("FLYqJsmJ5AGMxMxK3Qy1rSen4ES2dqqo6h51W3C1tYS"),
                 amount: (100 * u64::pow(10, 9)),
                 locked_amount: 0,
                 proof: None,
             },
             TreeNode {
+                index: 1,
                 claimant: pubkey!("EDGARWktv3nDxRYjufjdbZmryqGXceaFPoPpbUzdpqED"),
                 amount: (100 * u64::pow(10, 9)),
                 locked_amount: 0,
                 proof: None,
             },
             TreeNode {
+                index: 2,
                 claimant: pubkey!("EDGARWktv3nDxRYjufjdbZmryqGXceaFPoPpbUzdpqEH"),
                 amount: (100 * u64::pow(10, 9)),
                 locked_amount: 1,
@@ -340,38 +346,32 @@ mod tests {
         let merkle_distributor_info = AirdropMerkleTree::new(tree_nodes, 0).unwrap();
         let path = PathBuf::from("merkle_tree.json");
 
-        // serialize merkle distributor to file
         merkle_distributor_info.write_to_file(&path);
-        // now test we can successfully read from file
-        let merkle_distributor_read: AirdropMerkleTree =
-            AirdropMerkleTree::new_from_file(&path).unwrap();
+        let merkle_distributor_read = AirdropMerkleTree::new_from_file(&path).unwrap();
 
         assert_eq!(merkle_distributor_read.tree_nodes.len(), 3);
     }
 
     #[test]
-    fn test_new_test_merkle_tree() {
-        new_test_merkle_tree(100, &PathBuf::from("merkle_tree_test_csv.json"), 0);
-    }
-
-    // Test creating a merkle tree from Tree Nodes, where claimants are not unique
-    #[test]
     fn test_new_merkle_tree_duplicate_claimants() {
         let duplicate_pubkey = Pubkey::new_unique();
         let tree_nodes = vec![
             TreeNode {
+                index: 0,                           // indices here are placeholders
                 claimant: duplicate_pubkey,
                 amount: 10,
                 locked_amount: 10,
                 proof: None,
             },
             TreeNode {
+                index: 1,                           // since there is duplication, it will be reassigned
                 claimant: duplicate_pubkey,
                 amount: 1,
                 locked_amount: 10,
                 proof: None,
             },
             TreeNode {
+                index: 2,
                 claimant: Pubkey::new_unique(),
                 amount: 0,
                 locked_amount: 10,

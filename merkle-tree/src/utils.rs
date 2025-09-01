@@ -68,13 +68,16 @@ pub fn get_claim_status_pda(
 pub struct MerkleValidationError {
     pub msg: String,
 }
-
 #[cfg(test)]
+
 mod tests {
     use super::*;
-    // Helper function to create a tree node
-    fn create_node(claimant: Pubkey, amount: u64, locked_amount: u64) -> TreeNode {
+    use solana_program::pubkey::Pubkey;
+
+    // Helper function to create a tree node (now includes index)
+    fn create_node(index: u32, claimant: Pubkey, amount: u64, locked_amount: u64) -> TreeNode {
         TreeNode {
+            index,
             claimant,
             amount,
             locked_amount,
@@ -85,8 +88,8 @@ mod tests {
     #[test]
     fn test_get_max_total_claim_no_overflow() {
         let nodes = vec![
-            create_node(Pubkey::new_unique(), 100, 10),
-            create_node(Pubkey::new_unique(), 300, 20),
+            create_node(0, Pubkey::new_unique(), 100, 10),
+            create_node(1, Pubkey::new_unique(), 300, 20),
         ];
 
         let total_unlocked_amount = get_total_unlocked_amount(&nodes);
@@ -96,3 +99,4 @@ mod tests {
         assert_eq!(total_locked_amount, 30); // 10 + 20
     }
 }
+

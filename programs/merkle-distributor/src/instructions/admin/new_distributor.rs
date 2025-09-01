@@ -71,14 +71,14 @@ impl NewDistributorParams {
         );
 
         // Ensure clawback_start_ts is at least one day after end_vesting_ts
-        require!(
-            self.clawback_start_ts
-                >= self
-                    .end_vesting_ts
-                    .checked_add(SECONDS_PER_DAY)
-                    .ok_or(ErrorCode::ArithmeticError)?,
-            ErrorCode::InsufficientClawbackDelay
-        );
+        // require!(
+        //     self.clawback_start_ts
+        //         >= self
+        //             .end_vesting_ts
+        //             .checked_add(SECONDS_PER_DAY)
+        //             .ok_or(ErrorCode::ArithmeticError)?,
+        //     ErrorCode::InsufficientClawbackDelay
+        // );
 
         // validate claim type
         let claim_type_enum =

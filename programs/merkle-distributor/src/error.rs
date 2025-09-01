@@ -59,4 +59,8 @@ pub enum ErrorCode {
     InvalidLocker,
     #[msg("Escrow is not max lock")]
     EscrowIsNotMaxLock,
+    #[msg("Claim index out of range")]
+    IndexOutOfRange,
+    #[msg("Already claimed")]
+    AlreadyClaimed,
 }
