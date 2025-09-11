@@ -46,7 +46,7 @@ fn send_for_batch_address(
         &args.mint,
         &token_program_id,
     );
-    println!("user ata: {:?}", source_vault);
+
     let mut mass_ixs = vec![ComputeBudgetInstruction::set_compute_unit_limit(1_000_000)];
 
     // check priority fee
@@ -181,79 +181,91 @@ pub fn process_mass_send(args: &Args, mass_send_args: &MassSendArgs) {
     }
 }
 
-// pub fn process_resend(args: &Args, resend_args: &ResendSendArgs) {
-//     let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
-//     let mut sent_addresses = parse_send_addresse(&resend_args.des_path).unwrap();
+pub fn process_resend(args: &Args, resend_args: &ResendSendArgs) {
+    let client = RpcClient::new_with_commitment(&args.rpc_url, CommitmentConfig::finalized());
+    let mut sent_addresses = parse_send_addresse(&resend_args.des_path).unwrap();
+    let original_datasets = parse_new_record(&resend_args.csv_path).unwrap();
 
-//     let mut signature_to_address: HashMap<String, Vec<String>> = HashMap::new();
+    let users: HashMap<String, u64> = original_datasets
+        .iter()
+        .map(|(k, v)| (k.clone(), *v))
+        .collect();
 
-//     for (key, value) in sent_addresses.iter() {
-//         if let Some(array_addr) = signature_to_address.get_mut(value) {
-//             array_addr.push(key.clone());
-//             // signature_to_address.insert(value, array_addr.clone());
-//         } else {
-//             signature_to_address.insert(value.clone(), vec![key.clone()]);
-//         }
-//     }
+    let mut signature_to_address: HashMap<String, Vec<String>> = HashMap::new();
 
-//     let number_of_addresses_per_transaction = resend_args.max_address_per_tx as usize;
+    for (key, value) in sent_addresses.iter() {
+        if let Some(array_addr) = signature_to_address.get_mut(value) {
+            array_addr.push(key.clone());
+            // signature_to_address.insert(value, array_addr.clone());
+        } else {
+            signature_to_address.insert(value.clone(), vec![key.clone()]);
+        }
+    }
 
-//     for (signature, addresses) in signature_to_address.iter() {
-//         match client.get_signature_status_with_commitment_and_history(
-//             &Signature::from_str(signature).unwrap(),
-//             CommitmentConfig {
-//                 commitment: CommitmentLevel::Finalized,
-//             },
-//             true,
-//         ) {
-//             Ok(value) => {
-//                 let mut should_resend = false;
-//                 if value.is_none() {
-//                     println!("{} is not existed resend", signature);
-//                     should_resend = true;
-//                 } else {
-//                     match value.unwrap() {
-//                         Ok(_) => {}
-//                         Err(err) => {
-//                             println!("{} is error {}", signature, err);
-//                             should_resend = true;
-//                         }
-//                     }
-//                 }
+    let number_of_addresses_per_transaction = resend_args.max_address_per_tx as usize;
 
-//                 if should_resend {
-//                     let should_send_addresses =
-//                         if addresses.len() > number_of_addresses_per_transaction {
-//                             // break it to double, or ignore
-//                             addresses[0..number_of_addresses_per_transaction].to_vec()
-//                         } else {
-//                             addresses.clone()
-//                         };
-//                     match send_for_batch_address(
-//                         args,
-//                         resend_args.token_decimals,
-//                         should_send_addresses,
-//                     ) {
-//                         Ok((signature, qualified_address)) => {
-//                             println!("signature {}", signature);
-//                             for address in qualified_address.iter() {
-//                                 sent_addresses.insert(address.0.clone(), signature.to_string());
-//                             }
+    for (signature, addresses) in signature_to_address.iter() {
+        match client.get_signature_status_with_commitment_and_history(
+            &Signature::from_str(signature).unwrap(),
+            CommitmentConfig {
+                commitment: CommitmentLevel::Finalized,
+            },
+            true,
+        ) {
+            Ok(value) => {
+                let mut should_resend = false;
+                if value.is_none() {
+                    println!("{} is not existed resend", signature);
+                    should_resend = true;
+                } else {
+                    match value.unwrap() {
+                        Ok(_) => {}
+                        Err(err) => {
+                            println!("{} is error {}", signature, err);
+                            should_resend = true;
+                        }
+                    }
+                }
 
-//                             let serialized =
-//                                 serde_json::to_string_pretty(&sent_addresses.clone()).unwrap();
-//                             let mut file: File = File::create(&resend_args.des_path).unwrap();
-//                             file.write_all(serialized.as_bytes()).unwrap();
-//                         }
-//                         Err(err) => {
-//                             println!("{}", err);
-//                         }
-//                     }
-//                 }
-//             }
-//             Err(err) => {
-//                 println!("{}", err);
-//             }
-//         }
-//     }
-// }
+                if should_resend {
+                    let should_send_addresses =
+                        if addresses.len() > number_of_addresses_per_transaction {
+                            // break it to double, or ignore
+                            addresses[0..number_of_addresses_per_transaction].to_vec()
+                        } else {
+                            addresses.clone()
+                        };
+
+                    let resend_users_with_amount: Vec<(String, u64)> = should_send_addresses
+                        .iter()
+                        .filter_map(|key| users.get(key).map(|&value| (key.clone(), value)))
+                        .collect();
+
+                    match send_for_batch_address(
+                        args,
+                        resend_args.token_decimals,
+                        resend_users_with_amount,
+                    ) {
+                        Ok((signature, qualified_address)) => {
+                            println!("signature {}", signature);
+                            for address in qualified_address.iter() {
+                                sent_addresses.insert(address.0.clone(), signature.to_string());
+                            }
+
+                            let serialized =
+                                serde_json::to_string_pretty(&sent_addresses.clone()).unwrap();
+                            let mut file: File = File::create(&resend_args.des_path).unwrap();
+                            file.write_all(serialized.as_bytes()).unwrap();
+                        }
+                        Err(err) => {
+                            println!("{}", err);
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                println!("{}", err);
+            }
+        }
+    }
+}

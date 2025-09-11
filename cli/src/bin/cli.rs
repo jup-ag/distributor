@@ -114,12 +114,12 @@ pub enum Commands {
     Verify(VerifyArgs),
     FilterList(FilterListArgs),
     FilterListFixed(FilterListFixedArgs),
-    // FilterAndMergeList(FilterAndMergeListArgs),
+    FilterAndMergeList(FilterAndMergeListArgs),
     SlotByTime(SlotByTimeArgsArgs),
     /// generate kv proof
     GenerateKvProof(GenerateKvProofArgs),
     MassSend(MassSendArgs),
-    // Resend(ResendSendArgs),
+    Resend(ResendSendArgs),
     ViewClaimStatus(ViewClaimStatusArgs),
 
     VerifyKvProof(VerifyKvProofArgs),
@@ -452,8 +452,6 @@ pub struct FilterAndMergeListArgs {
     #[clap(long, env)]
     pub sub_path: PathBuf,
     #[clap(long, env)]
-    pub amount: u64,
-    #[clap(long, env)]
     pub destination_path: String,
 }
 
@@ -484,12 +482,13 @@ pub struct MassSendArgs {
 
 #[derive(Parser, Debug)]
 pub struct ResendSendArgs {
+    /// CSV path
+    #[clap(long, env)]
+    pub csv_path: PathBuf,
     #[clap(long, env)]
     pub des_path: PathBuf,
     #[clap(long, env)]
     pub max_address_per_tx: u64,
-    #[clap(long, env)]
-    pub amount: u64,
     #[clap(long, env)]
     pub token_decimals: u8,
 }
@@ -601,14 +600,14 @@ fn main() {
         Commands::CloseClaimStatus(_args) => {
             process_close_claim_status(&args);
         }
-        // Commands::FilterAndMergeList(filter_and_merge_list_args) => {
-        //     process_filter_and_merge(filter_and_merge_list_args);
-        // }
+        Commands::FilterAndMergeList(filter_and_merge_list_args) => {
+            process_filter_and_merge(filter_and_merge_list_args);
+        }
         Commands::GenerateKvProof(generate_kv_proof_args) => {
             process_generate_kv_proof(&args, generate_kv_proof_args);
         }
         Commands::MassSend(mass_send_args) => process_mass_send(&args, mass_send_args),
-        // Commands::Resend(re_send_args) => process_resend(&args, re_send_args),
+        Commands::Resend(re_send_args) => process_resend(&args, re_send_args),
         Commands::ViewClaimStatus(_view_claim_status_args) => view_claim_status(&args),
         Commands::VerifyKvProof(verify_kv_proof_args) => verify_kv_proof(verify_kv_proof_args),
         Commands::TotalClaim(total_claim_argrs) => get_total_claim(&args, total_claim_argrs),
