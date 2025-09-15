@@ -452,8 +452,6 @@ pub struct FilterAndMergeListArgs {
     #[clap(long, env)]
     pub sub_path: PathBuf,
     #[clap(long, env)]
-    pub amount: u64,
-    #[clap(long, env)]
     pub destination_path: String,
 }
 
@@ -479,17 +477,20 @@ pub struct MassSendArgs {
     #[clap(long, env)]
     pub max_address_per_tx: u64,
     #[clap(long, env)]
-    pub amount: u64,
+    pub token_decimals: u8,
 }
 
 #[derive(Parser, Debug)]
 pub struct ResendSendArgs {
+    /// CSV path
+    #[clap(long, env)]
+    pub csv_path: PathBuf,
     #[clap(long, env)]
     pub des_path: PathBuf,
     #[clap(long, env)]
     pub max_address_per_tx: u64,
     #[clap(long, env)]
-    pub amount: u64,
+    pub token_decimals: u8,
 }
 
 #[derive(Parser, Debug)]

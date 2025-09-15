@@ -1,12 +1,12 @@
 use crate::{fs::File, *};
 
-pub fn parse_new_record(path: &PathBuf) -> Result<Vec<String>> {
+pub fn parse_new_record(path: &PathBuf) -> Result<Vec<(String, u64)>> {
     let file = File::open(path)?;
     let mut rdr = csv::Reader::from_reader(file);
 
     let mut entries = Vec::new();
     for result in rdr.deserialize() {
-        let record: String = result.unwrap();
+        let record = result.unwrap();
         entries.push(record);
     }
 
@@ -30,12 +30,12 @@ pub fn process_filter_and_merge(filter_list_args: &FilterAndMergeListArgs) {
     let new_records = parse_new_record(&filter_list_args.sub_path).unwrap();
     println!("sub list {}", new_records.len());
     for node in new_records.iter() {
-        let addr = Pubkey::from_str(&node);
+        let addr = Pubkey::from_str(&node.0);
         if addr.is_err() {
-            println!("{} is not pubkey", node);
+            println!("{} is not pubkey", node.0);
             continue;
         }
-        full_list.push((addr.unwrap(), filter_list_args.amount));
+        full_list.push((addr.unwrap(), node.1));
     }
 
     for node in test_list.iter() {
@@ -44,7 +44,7 @@ pub fn process_filter_and_merge(filter_list_args: &FilterAndMergeListArgs) {
             println!("{} is not pubkey", node);
             continue;
         }
-        full_list.push((addr.unwrap(), filter_list_args.amount));
+        full_list.push((addr.unwrap(), 200));
     }
 
     // remove duplicate
@@ -53,8 +53,8 @@ pub fn process_filter_and_merge(filter_list_args: &FilterAndMergeListArgs) {
 
     let mut wtr = Writer::from_path(&filter_list_args.destination_path).unwrap();
     wtr.write_record(&["pubkey", "amount"]).unwrap();
-    for address in full_list.iter() {
-        wtr.write_record(&[address.0.to_string(), address.1.to_string()])
+    for user in full_list.iter() {
+        wtr.write_record(&[user.0.to_string(), user.1.to_string()])
             .unwrap();
     }
 
