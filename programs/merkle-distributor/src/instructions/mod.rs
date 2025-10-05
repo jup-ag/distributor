@@ -16,3 +16,7 @@ pub mod set_clawback_receiver;
 pub use close_distributor::*;
 pub mod close_claim_status;
 pub use close_claim_status::*;
+
+pub mod p_new_claim;
+
+pub use p_new_claim::p_handle_new_claim;

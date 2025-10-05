@@ -25,3 +25,9 @@ bytemuck = { workspace = true }
 jito-merkle-verify = { path = "../../verify" }
 solana-security-txt = "1.1.1"
 num_enum = "0.7.0"
+pinocchio = {workspace = true}   # no_std by default
+pinocchio-pubkey = {workspace = true}       # declare_id!/pubkey! helpers
+pinocchio-token = {workspace = true}        # SPL Token CPIs
+pinocchio-associated-token-account = {workspace = true}   # ATA CPIs
+pinocchio-system = {workspace = true}     # System CPIs
+pinocchio-log = {workspace = true}        # cheap logging

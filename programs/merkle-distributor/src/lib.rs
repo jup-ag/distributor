@@ -35,6 +35,10 @@ security_txt! {
     source_code: "https://github.com/jup-ag/distributor"
 }
 
+// 🔹 Only declares the hot-path entry module; implementation lives in src/entry_pino.rs
+#[cfg(feature = "no-entrypoint")]
+mod pino_entry;
+
 #[program]
 pub mod merkle_distributor {
     use super::*;

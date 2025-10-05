@@ -4,6 +4,7 @@
 
 [features]
 seeds = true
+resolution = false
 
 [registry]
 url = "https://api.apr.dev"
