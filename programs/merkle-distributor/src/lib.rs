@@ -74,6 +74,39 @@ pub mod merkle_distributor {
         )
     }
 
+    /// Anchor-only version of `new_distributor` that always routes through
+    /// the regular handler
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_new_distributor(
+        ctx: Context<NewDistributor>,
+        version: u64,
+        root: [u8; 32],
+        max_total_claim: u64,
+        max_num_nodes: u64,
+        start_vesting_ts: i64,
+        end_vesting_ts: i64,
+        clawback_start_ts: i64,
+        activation_point: u64,
+        activation_type: u8,
+        closable: bool,
+    ) -> Result<()> {
+        handle_new_distributor(
+            ctx,
+            version,
+            root,
+            max_total_claim,
+            max_num_nodes,
+            start_vesting_ts,
+            end_vesting_ts,
+            clawback_start_ts,
+            activation_point,
+            activation_type,
+            closable,
+            0,
+            0,
+        )
+    }
+
     #[allow(clippy::result_large_err)]
     pub fn new_distributor2(
         ctx: Context<NewDistributor>,
@@ -130,6 +163,17 @@ pub mod merkle_distributor {
 
     #[allow(clippy::result_large_err)]
     pub fn new_claim(
+        ctx: Context<NewClaim>,
+        amount_unlocked: u64,
+        amount_locked: u64,
+        proof: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        handle_new_claim(ctx, amount_unlocked, amount_locked, proof)
+    }
+
+    /// Anchor-only version of `new_claim` 
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_new_claim(
         ctx: Context<NewClaim>,
         amount_unlocked: u64,
         amount_locked: u64,

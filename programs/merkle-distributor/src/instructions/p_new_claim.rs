@@ -12,8 +12,8 @@ use crate::{
     math::SafeMath,
     state::{
         claimed_event::NewClaimEvent,
-        pino_claim_status::{cs_init_zero, cs_load_mut, PinoClaimStatus},
-        pino_distributor::{md_load, md_load_mut, PinoMerkleDistributor},
+        pino_claim_status::{cs_init_zero, cs_load_mut, PinoClaimStatus, CLAIM_STATUS_DISC},
+        pino_distributor::{md_load, md_load_mut},
     },
 };
 
@@ -114,7 +114,7 @@ pub fn p_handle_new_claim<'info>(
     }
 
     // ClaimStatus PDA & (lazy) init
-    let (expected_claim_status, _bump) = Pubkey::find_program_address(
+    let (expected_claim_status, cs_bump) = Pubkey::find_program_address(
         &[
             b"ClaimStatus",
             claimant_ai.key.as_ref(),
@@ -122,20 +122,33 @@ pub fn p_handle_new_claim<'info>(
         ],
         program_id,
     );
+
     if claim_status_ai.key() != expected_claim_status {
         return Err(ProgramError::InvalidSeeds.into());
     }
 
+    let mut needs_init = false;
     if claim_status_ai.lamports() == 0 || claim_status_ai.owner != program_id {
+        needs_init = true;
         let rent = Rent::get()?;
         let lamports = rent.minimum_balance(PinoClaimStatus::TOTAL_LEN);
+
         let create_ix = system_instruction::create_account(
-            claimant_ai.key,        // payer
-            &expected_claim_status, // new account
+            claimant_ai.key,        // payer (must be signer)
+            &expected_claim_status, // new PDA account
             lamports,
             PinoClaimStatus::TOTAL_LEN as u64,
             program_id,
         );
+
+        // #[account(init, seeds=..., bump)]
+        let cs_seeds: [&[u8]; 4] = [
+            b"ClaimStatus",
+            claimant_ai.key.as_ref(),
+            distributor_ai.key.as_ref(),
+            &[cs_bump],
+        ];
+
         invoke_signed(
             &create_ix,
             &[
@@ -143,8 +156,16 @@ pub fn p_handle_new_claim<'info>(
                 claim_status_ai.clone(),
                 system_program_ai.clone(),
             ],
-            &[],
+            &[&cs_seeds],
         )?;
+    } else {
+        let data = claim_status_ai.try_borrow_data()?;
+        if data.len() < 8 || &data[..8] != &CLAIM_STATUS_DISC {
+            needs_init = true;
+        }
+    }
+
+    if needs_init {
         cs_init_zero(claim_status_ai)?;
     }
 

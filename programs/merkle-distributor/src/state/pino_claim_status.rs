@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use crate::error::ErrorCode::ArithmeticError;
-use crate::math::SafeMath;
 
 pub const CLAIM_STATUS_DISC: [u8; 8] = [22,
     183,
