@@ -17,8 +17,10 @@ pub use close_distributor::*;
 pub mod close_claim_status;
 pub use close_claim_status::*;
 
+pub mod p_claim_locked;
 pub mod p_new_claim;
 mod p_new_distributor;
 
+pub use p_claim_locked::p_handle_claim_locked;
 pub use p_new_claim::p_handle_new_claim;
 pub use p_new_distributor::p_handle_new_distributor;

@@ -187,6 +187,12 @@ pub mod merkle_distributor {
         handle_claim_locked(ctx)
     }
 
+    /// Anchor-only version of `claim_locked` 
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_claim_locked(ctx: Context<ClaimLocked>) -> Result<()> {
+        handle_claim_locked(ctx)
+    }
+
     #[allow(clippy::result_large_err)]
     pub fn clawback(ctx: Context<Clawback>) -> Result<()> {
         handle_clawback(ctx)

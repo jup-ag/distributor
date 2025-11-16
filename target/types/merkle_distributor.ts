@@ -14,6 +14,282 @@ export type MerkleDistributor = {
   },
   "instructions": [
     {
+      "name": "anchorClaimLocked",
+      "docs": [
+        "Anchor-only fallback for the slow path."
+      ],
+      "discriminator": [
+        57,
+        128,
+        21,
+        141,
+        148,
+        218,
+        149,
+        22
+      ],
+      "accounts": [
+        {
+          "name": "distributor",
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "writable": true
+        },
+        {
+          "name": "claimStatus",
+          "docs": [
+            "Claim Status PDA"
+          ],
+          "writable": true
+        },
+        {
+          "name": "from",
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ],
+          "writable": true
+        },
+        {
+          "name": "to",
+          "docs": [
+            "Account to send the claimed tokens to.",
+            "Claimant must sign the transaction and can only claim on behalf of themself"
+          ],
+          "writable": true
+        },
+        {
+          "name": "claimant",
+          "docs": [
+            "Who is claiming the tokens."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tokenProgram",
+          "docs": [
+            "SPL [Token] program."
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "anchorNewClaim",
+      "docs": [
+        "Anchor-only version of `new_claim`"
+      ],
+      "discriminator": [
+        107,
+        242,
+        91,
+        229,
+        172,
+        185,
+        145,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "distributor",
+          "docs": [
+            "The [MerkleDistributor]."
+          ],
+          "writable": true
+        },
+        {
+          "name": "claimStatus",
+          "docs": [
+            "Claim status PDA"
+          ],
+          "writable": true
+        },
+        {
+          "name": "from",
+          "docs": [
+            "Distributor ATA containing the tokens to distribute."
+          ],
+          "writable": true
+        },
+        {
+          "name": "to",
+          "docs": [
+            "Account to send the claimed tokens to."
+          ],
+          "writable": true
+        },
+        {
+          "name": "claimant",
+          "docs": [
+            "Who is claiming the tokens."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "tokenProgram",
+          "docs": [
+            "SPL [Token] program."
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "docs": [
+            "The [System] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "amountUnlocked",
+          "type": "u64"
+        },
+        {
+          "name": "amountLocked",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "anchorNewDistributor",
+      "docs": [
+        "Anchor-only version of `new_distributor` that always routes through",
+        "the regular handler"
+      ],
+      "discriminator": [
+        167,
+        138,
+        6,
+        103,
+        1,
+        159,
+        225,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "distributor",
+          "docs": [
+            "[MerkleDistributor]."
+          ],
+          "writable": true
+        },
+        {
+          "name": "base",
+          "docs": [
+            "Base key of the distributor."
+          ],
+          "signer": true
+        },
+        {
+          "name": "clawbackReceiver",
+          "docs": [
+            "Clawback receiver token account"
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "The mint to distribute."
+          ]
+        },
+        {
+          "name": "tokenVault",
+          "docs": [
+            "Token vault",
+            "Should create previously"
+          ]
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "Admin wallet, responsible for creating the distributor and paying for the transaction.",
+            "Also has the authority to set the clawback receiver and change itself."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "docs": [
+            "The [System] program."
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "docs": [
+            "The [Associated Token] program."
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "docs": [
+            "The [Token] program."
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u64"
+        },
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "maxTotalClaim",
+          "type": "u64"
+        },
+        {
+          "name": "maxNumNodes",
+          "type": "u64"
+        },
+        {
+          "name": "startVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "endVestingTs",
+          "type": "i64"
+        },
+        {
+          "name": "clawbackStartTs",
+          "type": "i64"
+        },
+        {
+          "name": "activationPoint",
+          "type": "u64"
+        },
+        {
+          "name": "activationType",
+          "type": "u8"
+        },
+        {
+          "name": "closable",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "claimLocked",
       "discriminator": [
         34,
@@ -38,129 +314,14 @@ export type MerkleDistributor = {
           "docs": [
             "Claim Status PDA"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  67,
-                  108,
-                  97,
-                  105,
-                  109,
-                  83,
-                  116,
-                  97,
-                  116,
-                  117,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "claimant"
-              },
-              {
-                "kind": "account",
-                "path": "distributor"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "from",
           "docs": [
             "Distributor ATA containing the tokens to distribute."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "distributor"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "distributor.mint",
-                "account": "merkleDistributor"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "to",
@@ -182,8 +343,7 @@ export type MerkleDistributor = {
           "name": "tokenProgram",
           "docs": [
             "SPL [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         }
       ],
       "args": []
@@ -213,94 +373,7 @@ export type MerkleDistributor = {
           "docs": [
             "Distributor ATA containing the tokens to distribute."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "distributor"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "distributor.mint",
-                "account": "merkleDistributor"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "to",
@@ -321,15 +394,13 @@ export type MerkleDistributor = {
           "name": "systemProgram",
           "docs": [
             "The [System] program."
-          ],
-          "address": "11111111111111111111111111111111"
+          ]
         },
         {
           "name": "tokenProgram",
           "docs": [
             "SPL [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         }
       ],
       "args": []
@@ -356,17 +427,11 @@ export type MerkleDistributor = {
         },
         {
           "name": "claimant",
-          "writable": true,
-          "relations": [
-            "claimStatus"
-          ]
+          "writable": true
         },
         {
           "name": "admin",
-          "signer": true,
-          "relations": [
-            "claimStatus"
-          ]
+          "signer": true
         }
       ],
       "args": []
@@ -399,10 +464,7 @@ export type MerkleDistributor = {
           "docs": [
             "Clawback receiver token account"
           ],
-          "writable": true,
-          "relations": [
-            "distributor"
-          ]
+          "writable": true
         },
         {
           "name": "admin",
@@ -411,10 +473,7 @@ export type MerkleDistributor = {
             "Also has the authority to set the clawback receiver and change itself."
           ],
           "writable": true,
-          "signer": true,
-          "relations": [
-            "distributor"
-          ]
+          "signer": true
         },
         {
           "name": "destinationTokenAccount",
@@ -427,8 +486,7 @@ export type MerkleDistributor = {
           "name": "tokenProgram",
           "docs": [
             "The [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         }
       ],
       "args": []
@@ -458,129 +516,14 @@ export type MerkleDistributor = {
           "docs": [
             "Claim status PDA"
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  67,
-                  108,
-                  97,
-                  105,
-                  109,
-                  83,
-                  116,
-                  97,
-                  116,
-                  117,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "claimant"
-              },
-              {
-                "kind": "account",
-                "path": "distributor"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "from",
           "docs": [
             "Distributor ATA containing the tokens to distribute."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "distributor"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "distributor.mint",
-                "account": "merkleDistributor"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          "writable": true
         },
         {
           "name": "to",
@@ -601,15 +544,13 @@ export type MerkleDistributor = {
           "name": "tokenProgram",
           "docs": [
             "SPL [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         },
         {
           "name": "systemProgram",
           "docs": [
             "The [System] program."
-          ],
-          "address": "11111111111111111111111111111111"
+          ]
         }
       ],
       "args": [
@@ -652,45 +593,7 @@ export type MerkleDistributor = {
           "docs": [
             "[MerkleDistributor]."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  77,
-                  101,
-                  114,
-                  107,
-                  108,
-                  101,
-                  68,
-                  105,
-                  115,
-                  116,
-                  114,
-                  105,
-                  98,
-                  117,
-                  116,
-                  111,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "base"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "path": "version"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "base",
@@ -717,93 +620,7 @@ export type MerkleDistributor = {
           "docs": [
             "Token vault",
             "Should create previously"
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "distributor"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          ]
         },
         {
           "name": "admin",
@@ -818,22 +635,19 @@ export type MerkleDistributor = {
           "name": "systemProgram",
           "docs": [
             "The [System] program."
-          ],
-          "address": "11111111111111111111111111111111"
+          ]
         },
         {
           "name": "associatedTokenProgram",
           "docs": [
             "The [Associated Token] program."
-          ],
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+          ]
         },
         {
           "name": "tokenProgram",
           "docs": [
             "The [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         }
       ],
       "args": [
@@ -902,45 +716,7 @@ export type MerkleDistributor = {
           "docs": [
             "[MerkleDistributor]."
           ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  77,
-                  101,
-                  114,
-                  107,
-                  108,
-                  101,
-                  68,
-                  105,
-                  115,
-                  116,
-                  114,
-                  105,
-                  98,
-                  117,
-                  116,
-                  111,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "base"
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              },
-              {
-                "kind": "arg",
-                "path": "version"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "base",
@@ -967,93 +743,7 @@ export type MerkleDistributor = {
           "docs": [
             "Token vault",
             "Should create previously"
-          ],
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "distributor"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
+          ]
         },
         {
           "name": "admin",
@@ -1068,22 +758,19 @@ export type MerkleDistributor = {
           "name": "systemProgram",
           "docs": [
             "The [System] program."
-          ],
-          "address": "11111111111111111111111111111111"
+          ]
         },
         {
           "name": "associatedTokenProgram",
           "docs": [
             "The [Associated Token] program."
-          ],
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+          ]
         },
         {
           "name": "tokenProgram",
           "docs": [
             "The [Token] program."
-          ],
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ]
         }
       ],
       "args": [
@@ -1168,10 +855,7 @@ export type MerkleDistributor = {
             "Payer to create the distributor."
           ],
           "writable": true,
-          "signer": true,
-          "relations": [
-            "distributor"
-          ]
+          "signer": true
         }
       ],
       "args": [

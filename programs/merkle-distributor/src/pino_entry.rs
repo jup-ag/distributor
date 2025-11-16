@@ -11,8 +11,20 @@ unsafe fn p_entrypoint(input: *mut u8) -> Option<u64> {
 
     if ix_data.len() >= 8 {
         let new_dist_disc = crate::instruction::NewDistributor::DISCRIMINATOR;
+        let claim_locked_disc = crate::instruction::ClaimLocked::DISCRIMINATOR;
         if ix_data.starts_with(crate::instruction::NewClaim::DISCRIMINATOR) {
             let res = crate::instructions::p_handle_new_claim(&program_id_pk, &accounts, ix_data);
+            return Some(match res {
+                Ok(()) => solana_program::entrypoint::SUCCESS,
+                Err(e) => {
+                    let pe: anchor_lang::prelude::ProgramError = e.into();
+                    pe.into()
+                }
+            });
+        }
+        if ix_data.starts_with(&claim_locked_disc) {
+            let res =
+                crate::instructions::p_handle_claim_locked(&program_id_pk, &accounts, ix_data);
             return Some(match res {
                 Ok(()) => solana_program::entrypoint::SUCCESS,
                 Err(e) => {
