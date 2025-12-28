@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 
+use super::p_utils::read_token_mint_owner;
+
 use crate::{
     error::ErrorCode,
     state::{
@@ -9,22 +11,6 @@ use crate::{
         pino_distributor::{md_load, md_load_mut},
     },
 };
-
-#[inline(always)]
-fn read_token_account_mint_owner(ai: &AccountInfo) -> Result<(Pubkey, Pubkey)> {
-    let data = ai.try_borrow_data()?;
-    if data.len() < 64 {
-        return Err(ProgramError::InvalidAccountData.into());
-    }
-    let mut mint_bytes = [0u8; 32];
-    mint_bytes.copy_from_slice(&data[0..32]);
-    let mut owner_bytes = [0u8; 32];
-    owner_bytes.copy_from_slice(&data[32..64]);
-    Ok((
-        Pubkey::new_from_array(mint_bytes),
-        Pubkey::new_from_array(owner_bytes),
-    ))
-}
 
 /// Hot-path implementation of [ClaimLocked].
 pub fn p_handle_claim_locked<'info>(
@@ -112,11 +98,11 @@ pub fn p_handle_claim_locked<'info>(
     if *from_ai.key != token_vault {
         return Err(ProgramError::InvalidAccountData.into());
     }
-    let (from_mint, from_owner) = read_token_account_mint_owner(from_ai)?;
+    let (from_mint, from_owner) = read_token_mint_owner(from_ai)?;
     if from_mint != mint || from_owner != *distributor_ai.key {
         return Err(ProgramError::InvalidAccountData.into());
     }
-    let (to_mint, to_owner) = read_token_account_mint_owner(to_ai)?;
+    let (to_mint, to_owner) = read_token_mint_owner(to_ai)?;
     if to_owner != *claimant_ai.key {
         return Err(ErrorCode::OwnerMismatch.into());
     }

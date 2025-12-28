@@ -198,6 +198,12 @@ pub mod merkle_distributor {
         handle_clawback(ctx)
     }
 
+    /// Anchor-only fallback for clawback.
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_clawback(ctx: Context<Clawback>) -> Result<()> {
+        handle_clawback(ctx)
+    }
+
     #[allow(clippy::result_large_err)]
     pub fn set_clawback_receiver(ctx: Context<SetClawbackReceiver>) -> Result<()> {
         handle_set_clawback_receiver(ctx)
@@ -206,5 +212,15 @@ pub mod merkle_distributor {
     #[allow(clippy::result_large_err)]
     pub fn set_admin(ctx: Context<SetAdmin>) -> Result<()> {
         handle_set_admin(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_close_distributor(ctx: Context<CloseDistributor>) -> Result<()> {
+        handle_close_distributor(ctx)
+    }
+
+    #[allow(clippy::result_large_err)]
+    pub fn anchor_close_claim_status(ctx: Context<CloseClaimStatus>) -> Result<()> {
+        handle_close_status(ctx)
     }
 }
